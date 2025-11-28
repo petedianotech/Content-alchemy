@@ -16,11 +16,13 @@ import {
   FileSignature,
   ArrowLeft,
   Sparkles,
+  Facebook,
 } from "lucide-react";
 
 import { generateBlogPostDraft } from "@/ai/flows/generate-blog-post-draft";
 import { provideAiSuggestions } from "@/ai/flows/provide-ai-suggestions";
 import { ensureAdsenseCompliance } from "@/ai/flows/ensure-adsense-compliance";
+import { generateFacebookPost } from "@/ai/flows/generate-facebook-post";
 import type { ProvideAiSuggestionsOutput } from "@/ai/flows/provide-ai-suggestions";
 import type { EnsureAdsenseComplianceOutput } from "@/ai/flows/ensure-adsense-compliance";
 
@@ -68,6 +70,7 @@ type View = "form" | "loading" | "editor";
 export default function Home() {
   const [view, setView] = useState<View>("form");
   const [draft, setDraft] = useState({ title: "", content: "" });
+  const [facebookPost, setFacebookPost] = useState<string>("");
   const [aiSuggestions, setAiSuggestions] =
     useState<ProvideAiSuggestionsOutput | null>(null);
   const [adsenseResult, setAdsenseResult] =
@@ -76,6 +79,7 @@ export default function Home() {
   const [isGenerating, startGenerating] = useTransition();
   const [isSuggesting, startSuggesting] = useTransition();
   const [isChecking, startChecking] = useTransition();
+  const [isGeneratingFacebook, startGeneratingFacebook] = useTransition();
 
   const { toast } = useToast();
 
@@ -140,6 +144,24 @@ export default function Home() {
       }
     });
   };
+  
+  const handleGenerateFacebookPost = () => {
+    startGeneratingFacebook(async () => {
+      try {
+        const result = await generateFacebookPost({
+          topic: draft.title,
+          requirements: 'Summarize the blog post for facebook',
+        });
+        setFacebookPost(result.post);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Facebook Post Generation Failed",
+          description: "Could not generate a Facebook post at this time.",
+        });
+      }
+    });
+  }
 
   const downloadAs = (format: "txt" | "html" | "md") => {
     let content = "";
@@ -190,6 +212,7 @@ a.click();
     setDraft({ title: "", content: "" });
     setAiSuggestions(null);
     setAdsenseResult(null);
+    setFacebookPost("");
   };
 
   if (view === "loading") {
@@ -257,9 +280,10 @@ a.click();
           </div>
           <div className="flex flex-col gap-6">
             <Tabs defaultValue="suggestions" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="suggestions">AI Suggestions</TabsTrigger>
                 <TabsTrigger value="adsense">AdSense Check</TabsTrigger>
+                <TabsTrigger value="facebook">Facebook Post</TabsTrigger>
               </TabsList>
               <TabsContent value="suggestions">
                 <Card>
@@ -371,6 +395,41 @@ a.click();
                           {adsenseResult.suggestions}
                         </AlertDescription>
                       </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="facebook">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-headline">
+                      <Facebook /> Facebook Post
+                    </CardTitle>
+                    <CardDescription>
+                      Generate a Facebook post from your content.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Button
+                      onClick={handleGenerateFacebookPost}
+                      disabled={isGeneratingFacebook}
+                      className="w-full"
+                    >
+                      {isGeneratingFacebook ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        "Generate Facebook Post"
+                      )}
+                    </Button>
+                    {facebookPost && (
+                       <div className="space-y-4 animate-in fade-in">
+                         <Textarea
+                           value={facebookPost}
+                           onChange={(e) => setFacebookPost(e.target.value)}
+                           placeholder="Your magical content appears here..."
+                           className="h-[200px] flex-grow resize-none border-2 border-transparent bg-muted p-4 text-base leading-relaxed focus:border-primary"
+                         />
+                       </div>
                     )}
                   </CardContent>
                 </Card>
