@@ -1,7 +1,5 @@
 {
   "functions": {
-    "src/app/**/*.ts": {
-      "region": "iad1"
-    }
+    "src/app/**/*.ts": {}
   }
 }
