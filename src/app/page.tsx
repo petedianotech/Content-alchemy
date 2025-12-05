@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookText, Facebook, Youtube, Image } from "lucide-react";
+import { BookText, Facebook, Youtube, Image, BookOpen } from "lucide-react";
 import AlchemyIcon from "@/components/icons/AlchemyIcon";
 import {
   Card,
@@ -38,6 +38,12 @@ export default function Home() {
       href: "/prompt-generator",
       icon: <Image className="h-8 w-8 text-primary" />,
     },
+    {
+      title: "AI Book Generator",
+      description: "Outline and generate your next bestseller.",
+      href: "/book-generator",
+      icon: <BookOpen className="h-8 w-8 text-primary" />,
+    },
   ];
 
   return (
@@ -51,7 +57,7 @@ export default function Home() {
           AI Automation solutions by PeteAi to streamline your content creation process.
         </p>
       </div>
-      <div className="grid w-full max-w-4xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {features.map((feature) => (
           <Card
             key={feature.href}
