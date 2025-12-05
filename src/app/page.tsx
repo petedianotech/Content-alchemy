@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookText, Facebook, Youtube } from "lucide-react";
+import { BookText, Facebook, Youtube, Image } from "lucide-react";
 import AlchemyIcon from "@/components/icons/AlchemyIcon";
 import {
   Card,
@@ -32,6 +32,12 @@ export default function Home() {
       href: "/youtube-script-generator",
       icon: <Youtube className="h-8 w-8 text-primary" />,
     },
+    {
+      title: "AI Prompt Generator",
+      description: "Create detailed prompts for image generation AIs.",
+      href: "/prompt-generator",
+      icon: <Image className="h-8 w-8 text-primary" />,
+    },
   ];
 
   return (
@@ -42,11 +48,10 @@ export default function Home() {
           PeteAi
         </h1>
         <p className="mt-2 max-w-lg text-lg text-muted-foreground">
-          Transform your ideas into undetectable, AdSense-ready content with the
-          power of AI. Choose a tool to get started.
+          AI Automation solutions by PeteAi to streamline your content creation process.
         </p>
       </div>
-      <div className="grid w-full max-w-4xl grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid w-full max-w-4xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {features.map((feature) => (
           <Card
             key={feature.href}
