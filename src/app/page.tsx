@@ -39,7 +39,7 @@ export default function Home() {
       <div className="mb-8 flex flex-col items-center text-center">
         <AlchemyIcon className="mb-4 h-20 w-20 text-primary" />
         <h1 className="font-headline text-5xl font-bold tracking-tight text-primary">
-          Content Alchemy
+          PeteAi
         </h1>
         <p className="mt-2 max-w-lg text-lg text-muted-foreground">
           Transform your ideas into undetectable, AdSense-ready content with the

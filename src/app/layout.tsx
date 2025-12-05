@@ -4,8 +4,11 @@ import { Toaster } from '@/components/ui/toaster';
 import { Analytics } from "@vercel/analytics/react"
 
 export const metadata: Metadata = {
-  title: 'Content Alchemy',
-  description: 'Generate human-like blog posts with AI',
+  title: {
+    template: '%s | PeteAi',
+    default: 'PeteAi - AI Automation',
+  },
+  description: 'AI Automation solutions by PeteAi to streamline your content creation process.',
   icons: [{ rel: 'icon', url: '/favicon.ico' }],
 };
 
