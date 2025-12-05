@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react"
 export const metadata: Metadata = {
   title: 'Content Alchemy',
   description: 'Generate human-like blog posts with AI',
+  icons: [{ rel: 'icon', url: '/favicon.ico' }],
 };
 
 export default function RootLayout({
