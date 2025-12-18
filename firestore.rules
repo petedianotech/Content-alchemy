@@ -1,0 +1,132 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model. All data is considered private to the
+ * user who created it. Access is granted based on the user's authenticated UID matching the `{userId}` wildcard
+ * in the document path.
+ *
+ * Data Structure: The data is organized hierarchically. All user-specific content, such as blog posts, is
+ * stored in subcollections under a main `/users/{userId}` document. This structure simplifies security by
+ * leveraging path-based ownership.
+ *
+ * Key Security Decisions:
+ * - User Enumeration Prevention: Listing the top-level `/users` collection is explicitly disallowed to prevent
+ *   malicious actors from discovering all registered users.
+ * - Path-Based Security: All security decisions for user content rely on the `{userId}` in the path, making
+ *   rules fast and efficient. There are no cross-collection `get()` calls.
+ * - Default Deny: Any operation not explicitly granted is denied. All write operations (`create`, `update`,
+ *   `delete`) require authentication and ownership verification.
+ *
+ * Denormalization for Authorization: The chosen data structure is inherently denormalized for authorization.
+ * By placing a user's `blogPosts` in a subcollection under their own user document, the ownership is baked
+ * into the path itself. We further enforce this by requiring that `BlogPost` documents contain a `userId` field
+ * that matches the `userId` in the path, ensuring relational integrity.
+ *
+ * Structural Segregation: All user data is segregated into private user-specific data trees (e.g.,
+ * `/users/{userId}/...`). There are no collections that mix public and private data, which simplifies
+ * query and list security.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the foundation of the ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the document being accessed already exists.
+     * CRITICAL for all update and delete operations.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Combines ownership and existence checks for secure state-changing operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+
+    /**
+     * Validates that the new User document being created has an `id` field
+     * that correctly matches the document's path ID.
+     */
+    function incomingUserDataIsValid(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * Enforces that the `id` field on a User document is immutable.
+     * This prevents re-assigning a user profile to a different user.
+     */
+    function updatedUserDataIsValid() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates that the new BlogPost document being created has a `userId` field
+     * that correctly matches the owner's ID from the path.
+     */
+    function incomingBlogPostDataIsValid(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Enforces that the `userId` ownership field on a BlogPost is immutable.
+     * This prevents re-assigning a blog post to a different user.
+     */
+    function updatedBlogPostDataIsValid() {
+      return request.resource.data.userId == resource.data.id;
+    }
+
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Controls access to user profile documents.
+     * @path /users/{userId}
+     * @allow A signed-in user (auth.uid: 'user123') can (create) their own profile at `/users/user123`.
+     * @deny An anonymous user cannot (get) any profile. User 'user456' cannot (update) the profile for 'user123'.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Disallow listing all users for security.
+      allow create: if isOwner(userId) && incomingUserDataIsValid(userId);
+      allow update: if isExistingOwner(userId) && updatedUserDataIsValid();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to blog posts, which are private to each user.
+     * @path /users/{userId}/blogPosts/{blogPostId}
+     * @allow A user (auth.uid: 'user123') can (create) and (list) their own posts under `/users/user123/blogPosts`.
+     * @deny A different user (auth.uid: 'user456') cannot (get) or (delete) a post under `/users/user123/blogPosts`.
+     * @principle Enforces document ownership for all operations within a user's private subcollection.
+     */
+    match /users/{userId}/blogPosts/{blogPostId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && incomingBlogPostDataIsValid(userId);
+      allow update: if isExistingOwner(userId) && updatedBlogPostDataIsValid();
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}

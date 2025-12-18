@@ -1,0 +1,130 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Content Alchemy application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "username": {
+          "type": "string",
+          "description": "User's username or display name."
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "Date and time the user account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "username",
+        "creationDate"
+      ]
+    },
+    "BlogPost": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BlogPost",
+      "type": "object",
+      "description": "Represents a blog post generated or managed within the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BlogPost entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N BlogPost)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the blog post."
+        },
+        "content": {
+          "type": "string",
+          "description": "The main content of the blog post."
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "Date and time the blog post was created.",
+          "format": "date-time"
+        },
+        "lastModified": {
+          "type": "string",
+          "description": "Date and time the blog post was last modified.",
+          "format": "date-time"
+        },
+        "topic": {
+          "type": "string",
+          "description": "Topic the blog post generated from."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "title",
+        "content",
+        "creationDate",
+        "lastModified",
+        "topic"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Path-based ownership simplifies security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/blogPosts/{blogPostId}",
+        "definition": {
+          "entityName": "BlogPost",
+          "schema": {
+            "$ref": "#/backend/entities/BlogPost"
+          },
+          "description": "Stores blog posts owned by a specific user. Enforces path-based ownership for secure access. Supports secure `list` operations based on `userId`.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "blogPostId",
+              "description": "The unique identifier of the blog post."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and QAPs. It leverages path-based ownership for private user data (blog posts) and avoids hierarchical `get()` calls in security rules.\n\n*   **`/users/{userId}`:** Stores user profiles. This collection uses path-based ownership, making security rules straightforward (`request.auth.uid == userId`).\n*   **`/users/{userId}/blogPosts/{blogPostId}`:** Stores blog posts owned by a specific user. This follows the path-based ownership pattern, ensuring that only the authenticated user (`request.auth.uid == userId`) can access their own blog posts. The structure inherently supports secure `list` operations (QAPs) as rules can simply check `request.auth.uid == userId` without needing to filter based on document content.\n\nThis structure promotes clarity, predictability, and simplifies security rule implementation while adhering to the core design principles."
+  }
+}
