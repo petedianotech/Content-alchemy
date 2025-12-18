@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemoFirebase } from '@/firebase/provider';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -24,7 +24,7 @@ export default function MyPostsPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    const postsQuery = useMemo(() => {
+    const postsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, 'users', user.uid, 'blogPosts'),
