@@ -8,3 +8,4 @@ import '@/ai/flows/generate-facebook-post.ts';
 import '@/ai/flows/generate-youtube-script.ts';
 import '@/ai/flows/generate-image-prompt.ts';
 import '@/ai/flows/generate-book-outline.ts';
+import '@/ai/flows/generate-tweet.ts';

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookText, Facebook, Youtube, Image, BookOpen } from "lucide-react";
+import { BookText, Facebook, Youtube, Image, BookOpen, Twitter } from "lucide-react";
 import AlchemyIcon from "@/components/icons/AlchemyIcon";
 import {
   Card,
@@ -44,6 +44,12 @@ export default function Home() {
       href: "/book-generator",
       icon: <BookOpen className="h-8 w-8 text-primary" />,
     },
+     {
+      title: "AI Tweet Generator",
+      description: "Craft viral-worthy tweets in an instant.",
+      href: "/tweet-generator",
+      icon: <Twitter className="h-8 w-8 text-primary" />,
+    },
   ];
 
   return (
@@ -54,7 +60,7 @@ export default function Home() {
           PeteAi
         </h1>
         <p className="mt-2 max-w-lg text-lg text-muted-foreground">
-          AI Automation solutions by PeteAi to streamline your content creation process.
+          AI Automation solutions to streamline your content creation process.
         </p>
       </div>
       <div className="grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
