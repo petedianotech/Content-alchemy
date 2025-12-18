@@ -11,9 +11,11 @@ import {
   ArrowLeft,
   Sparkles,
   Home,
+  Send,
 } from "lucide-react";
 
 import { generateTweet } from "@/ai/flows/generate-tweet";
+import { postTweet } from "@/ai/flows/post-tweet";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -57,6 +59,7 @@ export default function TweetGenerator() {
   const [tweet, setTweet] = useState("");
 
   const [isGenerating, startGenerating] = useTransition();
+  const [isPosting, startPosting] = useTransition();
 
   const { toast } = useToast();
 
@@ -83,6 +86,37 @@ export default function TweetGenerator() {
           description: "There was a problem generating your tweet. Please try again.",
         });
         setView("form");
+      }
+    });
+  };
+
+  const handlePostTweet = () => {
+    startPosting(async () => {
+      try {
+        const result = await postTweet({ tweet });
+        if (result.success && result.tweetId) {
+          toast({
+            title: "Tweet Posted!",
+            description: "Your tweet is now live on X.",
+            action: (
+              <a
+                href={`https://twitter.com/anyuser/status/${result.tweetId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline">View</Button>
+              </a>
+            ),
+          });
+        } else {
+          throw new Error(result.error || "Failed to post tweet.");
+        }
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Posting Failed",
+          description: error.message || "Could not post your tweet at this time.",
+        });
       }
     });
   };
@@ -132,9 +166,19 @@ export default function TweetGenerator() {
           placeholder="Your magical tweet appears here..."
           className="h-[200px] flex-grow resize-none border-2 border-transparent bg-card p-4 text-lg leading-relaxed focus:border-primary"
         />
-         <Button onClick={() => navigator.clipboard.writeText(tweet)} className="mt-4">
-            Copy to Clipboard
-        </Button>
+        <div className="mt-4 flex gap-2">
+            <Button onClick={() => navigator.clipboard.writeText(tweet)}>
+                Copy to Clipboard
+            </Button>
+             <Button onClick={handlePostTweet} disabled={isPosting}>
+              {isPosting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              Post to X
+            </Button>
+        </div>
       </div>
     );
   }
