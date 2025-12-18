@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import LoginProfile from "@/components/auth/LoginProfile";
 
 export default function Home() {
   const features = [
@@ -54,6 +55,9 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <LoginProfile />
+      </div>
       <div className="mb-8 flex flex-col items-center text-center">
         <AlchemyIcon className="mb-4 h-20 w-20 text-primary" />
         <h1 className="font-headline text-5xl font-bold tracking-tight text-primary">
