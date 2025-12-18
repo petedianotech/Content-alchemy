@@ -4,18 +4,14 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Link from "next/link";
 import {
-  Image as ImageIcon,
+  Youtube,
   Loader2,
   ArrowLeft,
   Sparkles,
-  Home,
-  ClipboardCopy,
 } from "lucide-react";
 
-import { generateImagePrompt } from "@/ai/flows/generate-image-prompt";
-import type { GenerateImagePromptOutput } from "@/ai/flows/generate-image-prompt";
+import { generateYoutubeScript } from "@/ai/flows/generate-youtube-script";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -44,20 +40,22 @@ import MagicWandIcon from "@/components/icons/MagicWandIcon";
 const formSchema = z.object({
   topic: z
     .string()
-    .min(3, "Your idea should be at least a few words.")
-    .max(150, "That's a long idea! Try to be more concise."),
+    .min(5, "Your topic needs to be a bit more descriptive.")
+    .max(100, "That's a long topic! Try to be more concise."),
   requirements: z
     .string()
-    .max(500, "Requirements are getting a bit long. Keep it focused!")
-    .optional(),
+    .min(10, "Please provide some requirements for the AI.")
+    .max(500, "Requirements are getting a bit long. Keep it focused!"),
 });
 
-type View = "form" | "loading" | "results";
+type View = "form" | "loading" | "editor";
 
-export default function PromptGenerator() {
+export default function YoutubeScriptGenerator() {
   const [view, setView] = useState<View>("form");
-  const [results, setResults] = useState<GenerateImagePromptOutput | null>(null);
+  const [script, setScript] = useState("");
+
   const [isGenerating, startGenerating] = useTransition();
+
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -72,104 +70,76 @@ export default function PromptGenerator() {
     setView("loading");
     startGenerating(async () => {
       try {
-        const result = await generateImagePrompt(values);
-        setResults(result);
-        setView("results");
+        const result = await generateYoutubeScript(values);
+        setScript(result.script);
+        setView("editor");
         form.reset();
       } catch (error) {
         toast({
           variant: "destructive",
-          title: "Oh no! The inspiration failed.",
-          description: "There was a problem generating your prompts. Please try again.",
+          title: "Oh no! The magic fizzled.",
+          description: "There was a problem generating your script. Please try again.",
         });
         setView("form");
       }
     });
   };
-  
-  const handleCopyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied to clipboard!",
-      description: "You can now paste the prompt into your image generator.",
-    });
-  }
 
   const handleStartOver = () => {
     setView("form");
-    setResults(null);
+    setScript("");
   };
 
   if (view === "loading") {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 text-center">
+      <div className="flex h-[calc(100vh-10rem)] flex-col items-center justify-center gap-4 text-center">
         <div className="animate-spin text-primary">
           <AlchemyIcon className="h-24 w-24" />
         </div>
         <h1 className="font-headline text-3xl text-primary">
-          Engineering Your Prompts...
+          Writing Your YouTube Script...
         </h1>
         <p className="max-w-md text-muted-foreground">
-          Our AI prompt master is crafting the perfect words for your vision.
+          Our AI is scripting your next viral video. Action!
         </p>
       </div>
     );
   }
 
-  if (view === "results") {
+  if (view === "editor") {
     return (
-      <div className="container mx-auto max-w-4xl p-4 py-8 md:p-8">
-        <div className="mb-4 flex justify-between">
-          <Button variant="ghost" onClick={handleStartOver}>
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-4">
+            <Button variant="ghost" onClick={handleStartOver}>
             <ArrowLeft className="mr-2" />
-            Create Another
-          </Button>
-          <Link href="/" passHref>
-            <Button variant="outline">
-              <Home className="mr-2" />
-              Back to Home
+            Start Over
             </Button>
-          </Link>
         </div>
-        <h1 className="font-headline text-4xl font-bold text-primary mb-6">
-          Your Generated Prompts
+        <h1 className="font-headline text-4xl font-bold text-primary mb-4">
+          Your YouTube Script
         </h1>
-        <div className="grid gap-6">
-          {results?.prompts.map((prompt, index) => (
-            <Card key={index}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Prompt Variation {index + 1}
-                  <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(prompt)}>
-                    <ClipboardCopy className="h-5 w-5" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-base">{prompt}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Textarea
+          value={script}
+          onChange={(e) => setScript(e.target.value)}
+          placeholder="Your amazing script appears here..."
+          className="h-[500px] flex-grow resize-none border-2 border-transparent bg-card p-4 text-lg leading-relaxed focus:border-primary"
+        />
+        <Button onClick={() => navigator.clipboard.writeText(script)} className="mt-4">
+            Copy to Clipboard
+        </Button>
       </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center p-4">
-      <Link href="/" passHref>
-        <Button variant="ghost" className="absolute left-4 top-4">
-          <Home className="mr-2" />
-          Home
-        </Button>
-      </Link>
+    <div className="flex flex-col items-center">
       <div className="mb-8 flex flex-col items-center text-center">
-        <ImageIcon className="mb-4 h-20 w-20 text-primary" />
+        <Youtube className="mb-4 h-20 w-20 text-primary" />
         <h1 className="font-headline text-5xl font-bold tracking-tight text-primary">
-          AI Prompt Generator
+          AI YouTube Script Generator
         </h1>
         <p className="mt-2 max-w-lg text-lg text-muted-foreground">
-          Create detailed, artistic prompts for Midjourney, DALL-E, and more.
+          Craft compelling scripts for your next viral video.
         </p>
       </div>
       <Card className="w-full max-w-2xl shadow-2xl shadow-primary/10">
@@ -178,10 +148,10 @@ export default function PromptGenerator() {
             <CardHeader>
               <CardTitle className="flex items-center gap-3 font-headline text-2xl">
                 <Sparkles className="h-8 w-8" />
-                Describe Your Vision
+                Script Your Video
               </CardTitle>
               <CardDescription>
-                Give the AI a starting point for your masterpiece.
+                Tell our AI what your video is about.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -191,17 +161,17 @@ export default function PromptGenerator() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2 text-lg">
-                      <ImageIcon /> Basic Idea
+                      <Youtube /> Video Topic
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g., 'A robot reading a book in a forest'"
+                        placeholder="e.g., 'How to make the perfect sourdough bread'"
                         {...field}
                         className="p-6 text-base"
                       />
                     </FormControl>
                     <FormDescription>
-                      What is the core subject of your desired image?
+                      What's the main subject of your video?
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -214,17 +184,17 @@ export default function PromptGenerator() {
                   <FormItem>
                     <FormLabel className="flex items-center gap-2 text-lg">
                       <Sparkles />
-                      Styles & Keywords (Optional)
+                      Script Directives
                     </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g., 'Impressionist style, vibrant colors, calm mood'"
+                        placeholder="e.g., 'Script for a 5-minute video. Casual and friendly tone. Include a hook, 3 main points, and a call to subscribe.'"
                         {...field}
                         className="min-h-[120px] p-4"
                       />
                     </FormControl>
                     <FormDescription>
-                      Specify any desired art style, artist, mood, or colors.
+                      Specify tone, length, structure, and calls to action.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -243,12 +213,12 @@ export default function PromptGenerator() {
                 ) : (
                   <MagicWandIcon className="mr-2 h-5 w-5" />
                 )}
-                Generate Prompts
+                Generate Script
               </Button>
             </CardFooter>
           </form>
         </Form>
       </Card>
-    </main>
+    </div>
   );
 }

@@ -4,16 +4,14 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Link from "next/link";
 import {
-  Twitter,
+  Facebook,
   Loader2,
+  ArrowLeft,
   Sparkles,
-  Home,
-  Send,
 } from "lucide-react";
 
-import { generateAndPostTweet } from "@/ai/flows/generate-and-post-tweet";
+import { generateFacebookPost } from "@/ai/flows/generate-facebook-post";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -50,8 +48,14 @@ const formSchema = z.object({
     .max(500, "Requirements are getting a bit long. Keep it focused!"),
 });
 
-export default function TweetGenerator() {
+type View = "form" | "loading" | "editor";
+
+export default function FacebookPostGenerator() {
+  const [view, setView] = useState<View>("form");
+  const [post, setPost] = useState("");
+
   const [isGenerating, startGenerating] = useTransition();
+
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -62,65 +66,92 @@ export default function TweetGenerator() {
     },
   });
 
-  const handleGenerateAndPost = (values: z.infer<typeof formSchema>) => {
+  const handleGenerate = (values: z.infer<typeof formSchema>) => {
+    setView("loading");
     startGenerating(async () => {
       try {
-        const result = await generateAndPostTweet(values);
-        if (result.success && result.tweetId) {
-          toast({
-            title: "Tweet Posted!",
-            description: "Your tweet is now live on X.",
-            action: (
-              <a
-                href={`https://twitter.com/anyuser/status/${result.tweetId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline">View Tweet</Button>
-              </a>
-            ),
-          });
-          form.reset();
-        } else {
-          throw new Error(result.error || "Failed to generate and post tweet.");
-        }
-      } catch (error: any) {
+        const result = await generateFacebookPost(values);
+        setPost(result.post);
+        setView("editor");
+        form.reset();
+      } catch (error) {
         toast({
           variant: "destructive",
-          title: "Automation Failed",
-          description: error.message || "Could not complete the process at this time.",
+          title: "Oh no! The magic fizzled.",
+          description: "There was a problem generating your post. Please try again.",
         });
+        setView("form");
       }
     });
   };
 
-  return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center p-4">
-       <Link href="/" passHref>
-        <Button variant="ghost" className="absolute left-4 top-4">
-          <Home className="mr-2" />
-          Home
+  const handleStartOver = () => {
+    setView("form");
+    setPost("");
+  };
+
+  if (view === "loading") {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] flex-col items-center justify-center gap-4 text-center">
+        <div className="animate-spin text-primary">
+          <AlchemyIcon className="h-24 w-24" />
+        </div>
+        <h1 className="font-headline text-3xl text-primary">
+          Crafting Your Facebook Post...
+        </h1>
+        <p className="max-w-md text-muted-foreground">
+          Our AI is whipping up a share-worthy post. Hang tight!
+        </p>
+      </div>
+    );
+  }
+
+  if (view === "editor") {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-4">
+            <Button variant="ghost" onClick={handleStartOver}>
+            <ArrowLeft className="mr-2" />
+            Start Over
+            </Button>
+        </div>
+        <h1 className="font-headline text-4xl font-bold text-primary mb-4">
+          Your Facebook Post
+        </h1>
+        <Textarea
+          value={post}
+          onChange={(e) => setPost(e.target.value)}
+          placeholder="Your magical post appears here..."
+          className="h-[300px] flex-grow resize-none border-2 border-transparent bg-card p-4 text-lg leading-relaxed focus:border-primary"
+        />
+         <Button onClick={() => navigator.clipboard.writeText(post)} className="mt-4">
+            Copy to Clipboard
         </Button>
-      </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center">
       <div className="mb-8 flex flex-col items-center text-center">
-        <Twitter className="mb-4 h-20 w-20 text-primary" />
+        <Facebook className="mb-4 h-20 w-20 text-primary" />
         <h1 className="font-headline text-5xl font-bold tracking-tight text-primary">
-          Automated Tweet Generator
+          AI Facebook Post Maker
         </h1>
         <p className="mt-2 max-w-lg text-lg text-muted-foreground">
-          Generate and post engaging tweets to your X / Twitter feed in a single click.
+          Generate engaging posts for your social media in seconds.
         </p>
       </div>
       <Card className="w-full max-w-2xl shadow-2xl shadow-primary/10">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleGenerateAndPost)}>
+          <form onSubmit={form.handleSubmit(handleGenerate)}>
             <CardHeader>
               <CardTitle className="flex items-center gap-3 font-headline text-2xl">
                 <Sparkles className="h-8 w-8" />
-                Create & Post a Tweet
+                Create a Post
               </CardTitle>
               <CardDescription>
-                Tell our AI what you want to tweet about, and it will generate and post it for you.
+                Tell our AI what you want to post about.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -130,17 +161,17 @@ export default function TweetGenerator() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2 text-lg">
-                      <Twitter /> Tweet Topic
+                      <Facebook /> Post Topic
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g., 'The importance of AI in business automation'"
+                        placeholder="e.g., 'New product launch!'"
                         {...field}
                         className="p-6 text-base"
                       />
                     </FormControl>
                     <FormDescription>
-                      What's the main idea of your tweet?
+                      What's the main idea of your post?
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -157,13 +188,13 @@ export default function TweetGenerator() {
                     </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g., 'Use a professional yet approachable tone. Include hashtags like #AI, #Business, and #Automation.'"
+                        placeholder="e.g., 'Use an excited tone, include a question to boost engagement, and add relevant hashtags.'"
                         {...field}
                         className="min-h-[120px] p-4"
                       />
                     </FormControl>
                     <FormDescription>
-                      Specify tone, hashtags, and any other details.
+                      Specify tone, hashtags, and calls to action.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -180,27 +211,14 @@ export default function TweetGenerator() {
                 {isGenerating ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Send className="mr-2 h-5 w-5" />
+                  <MagicWandIcon className="mr-2 h-5 w-5" />
                 )}
-                Generate and Post to X
+                Generate Post
               </Button>
             </CardFooter>
           </form>
         </Form>
       </Card>
-      {isGenerating && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
-            <div className="animate-spin text-primary">
-                <AlchemyIcon className="h-24 w-24" />
-            </div>
-            <h1 className="mt-4 font-headline text-2xl text-primary">
-                Generating and Posting...
-            </h1>
-            <p className="max-w-sm text-center text-muted-foreground">
-                Your tweet is being crafted and sent to X. Please wait a moment.
-            </p>
-        </div>
-      )}
-    </main>
+    </div>
   );
 }

@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
-import Link from "next/link";
 import {
   BookText,
   Download,
@@ -18,7 +17,6 @@ import {
   ArrowLeft,
   Sparkles,
   Facebook,
-  Home,
   Save,
 } from "lucide-react";
 import {
@@ -277,7 +275,7 @@ export default function BlogPostGenerator() {
 
   if (view === "loading") {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 text-center">
+      <div className="flex h-[calc(100vh-10rem)] flex-col items-center justify-center gap-4 text-center">
         <div className="animate-spin text-primary">
           <AlchemyIcon className="h-24 w-24" />
         </div>
@@ -294,18 +292,12 @@ export default function BlogPostGenerator() {
 
   if (view === "editor") {
     return (
-      <div className="container mx-auto max-w-7xl p-4 py-8 md:p-8">
-        <div className="mb-4 flex justify-between">
+      <div className="flex flex-col gap-8">
+        <div className="flex items-center justify-between">
             <Button variant="ghost" onClick={handleStartOver}>
             <ArrowLeft className="mr-2" />
             Start Over
             </Button>
-            <Link href="/" passHref>
-                <Button variant="outline">
-                    <Home className="mr-2" />
-                    Back to Home
-                </Button>
-            </Link>
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -523,13 +515,7 @@ export default function BlogPostGenerator() {
   }
 
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center p-4">
-      <Link href="/" passHref>
-        <Button variant="ghost" className="absolute left-4 top-4">
-          <Home className="mr-2" />
-          Home
-        </Button>
-      </Link>
+    <div className="flex flex-col items-center">
       <div className="mb-8 flex flex-col items-center text-center">
         <QuillIcon className="mb-4 h-20 w-20 text-primary" />
         <h1 className="font-headline text-5xl font-bold tracking-tight text-primary">
@@ -617,6 +603,6 @@ export default function BlogPostGenerator() {
           </form>
         </Form>
       </Card>
-    </main>
+    </div>
   );
 }

@@ -8,20 +8,14 @@ import {
 import { useAuth, useUser } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogIn } from 'lucide-react';
+import { LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { Skeleton } from '../ui/skeleton';
+import { useSidebar } from '../ui/sidebar';
 
 export default function LoginProfile() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const { state } = useSidebar();
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
@@ -41,49 +35,48 @@ export default function LoginProfile() {
   };
 
   if (isUserLoading) {
-    return <Button variant="outline" size="sm">Loading...</Button>;
+    if (state === 'collapsed') {
+      return <Skeleton className='size-8 rounded-full' />
+    }
+    return <Skeleton className="h-10 w-full" />;
   }
 
   if (!user) {
     return (
-      <Button variant="outline" onClick={handleGoogleSignIn}>
-        <LogIn className="mr-2 h-4 w-4" />
-        Login
+      <Button variant="ghost" className='w-full justify-start' onClick={handleGoogleSignIn}>
+        <LogIn />
+        <span className='group-data-[collapsible=icon]:hidden'>Login</span>
       </Button>
     );
   }
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
-            <AvatarImage
-              src={user.photoURL ?? ''}
-              alt={user.displayName ?? 'User'}
-            />
-            <AvatarFallback>
-              {user.displayName?.charAt(0) ?? user.email?.charAt(0) ?? 'U'}
-            </AvatarFallback>
-          </Avatar>
+  if (state === 'collapsed') {
+     return (
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <UserIcon />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
-              {user.displayName}
-            </p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
-          Log out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+     )
+  }
+
+  return (
+    <div className='flex w-full flex-col gap-2 rounded-lg bg-sidebar-accent p-2 text-sidebar-accent-foreground'>
+       <div className="flex items-center gap-2">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <UserIcon className="size-5" />
+            </div>
+            <div className='flex flex-col truncate'>
+                <p className="truncate text-sm font-medium leading-none">
+                {user.displayName}
+                </p>
+                <p className="truncate text-xs leading-none text-muted-foreground">
+                {user.email}
+                </p>
+            </div>
+       </div>
+      <Button variant="ghost" size="sm" className='w-full justify-start' onClick={handleSignOut}>
+          <LogOut />
+          <span>Log out</span>
+      </Button>
+    </div>
   );
 }
