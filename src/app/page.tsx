@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookText, Facebook, Youtube, Image, BookOpen, Twitter } from "lucide-react";
+import { BookText, Facebook, Youtube, Image, BookOpen, Twitter, Library } from "lucide-react";
 import AlchemyIcon from "@/components/icons/AlchemyIcon";
 import {
   Card,
@@ -12,8 +12,11 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import LoginProfile from "@/components/auth/LoginProfile";
+import { useUser } from "@/firebase";
 
 export default function Home() {
+    const { user } = useUser();
+
   const features = [
     {
       title: "AI Blog Post Generator",
@@ -55,8 +58,18 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center p-4">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 z-10">
         <LoginProfile />
+      </div>
+      <div className="absolute top-4 left-4 z-10">
+         {user && (
+            <Link href="/my-posts" passHref>
+                <Button variant="outline">
+                    <Library className="mr-2" />
+                    My Posts
+                </Button>
+            </Link>
+         )}
       </div>
       <div className="mb-8 flex flex-col items-center text-center">
         <AlchemyIcon className="mb-4 h-20 w-20 text-primary" />

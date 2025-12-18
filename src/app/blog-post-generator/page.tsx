@@ -19,7 +19,14 @@ import {
   Sparkles,
   Facebook,
   Home,
+  Save,
 } from "lucide-react";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+
 
 import { generateBlogPostDraft } from "@/ai/flows/generate-blog-post-draft";
 import { provideAiSuggestions } from "@/ai/flows/provide-ai-suggestions";
@@ -55,6 +62,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import AlchemyIcon from "@/components/icons/AlchemyIcon";
 import QuillIcon from "@/components/icons/QuillIcon";
 import MagicWandIcon from "@/components/icons/MagicWandIcon";
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
 
 const formSchema = z.object({
   topic: z
@@ -71,14 +79,18 @@ type View = "form" | "loading" | "editor";
 
 export default function BlogPostGenerator() {
   const [view, setView] = useState<View>("form");
-  const [draft, setDraft] = useState({ title: "", content: "" });
+  const [draft, setDraft] = useState({ topic: "", title: "", content: "" });
   const [facebookPost, setFacebookPost] = useState<string>("");
   const [aiSuggestions, setAiSuggestions] =
     useState<ProvideAiSuggestionsOutput | null>(null);
   const [adsenseResult, setAdsenseResult] =
     useState<EnsureAdsenseComplianceOutput | null>(null);
 
+  const { user } = useUser();
+  const firestore = useFirestore();
+
   const [isGenerating, startGenerating] = useTransition();
+  const [isSaving, startSaving] = useTransition();
   const [isSuggesting, startSuggesting] = useTransition();
   const [isChecking, startChecking] = useTransition();
   const [isGeneratingFacebook, startGeneratingFacebook] = useTransition();
@@ -99,7 +111,7 @@ export default function BlogPostGenerator() {
       try {
         const result = await generateBlogPostDraft(values);
         const [title, ...contentParts] = result.draft.split("\n\n");
-        setDraft({ title, content: contentParts.join("\n\n") });
+        setDraft({ topic: values.topic, title, content: contentParts.join("\n\n") });
         setView("editor");
         form.reset();
       } catch (error) {
@@ -112,6 +124,52 @@ export default function BlogPostGenerator() {
       }
     });
   };
+
+  const handleSavePost = () => {
+    if (!user || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to save a post.",
+        });
+        return;
+    }
+
+    startSaving(async () => {
+        const postData = {
+            userId: user.uid,
+            title: draft.title,
+            content: draft.content,
+            topic: draft.topic,
+            creationDate: serverTimestamp(),
+            lastModified: serverTimestamp(),
+        };
+
+        const postsCollection = collection(firestore, 'users', user.uid, 'blogPosts');
+
+        addDoc(postsCollection, postData)
+          .then((docRef) => {
+            toast({
+                title: "Post Saved!",
+                description: "Your masterpiece has been saved to your collection.",
+            });
+          })
+          .catch((error) => {
+            console.error("Error saving document: ", error);
+            const permissionError = new FirestorePermissionError({
+                path: postsCollection.path,
+                operation: 'create',
+                requestResourceData: postData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({
+                variant: "destructive",
+                title: "Save Failed",
+                description: "Could not save your post. Check permissions and try again.",
+            });
+          });
+    });
+};
 
   const handleGetSuggestions = () => {
     startSuggesting(async () => {
@@ -204,14 +262,14 @@ export default function BlogPostGenerator() {
       .toLowerCase()
       .replace(/\s+/g, "-")}.${fileExtension}`;
     document.body.appendChild(a);
-a.click();
+    a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
   
   const handleStartOver = () => {
     setView("form");
-    setDraft({ title: "", content: "" });
+    setDraft({ topic: "", title: "", content: "" });
     setAiSuggestions(null);
     setAdsenseResult(null);
     setFacebookPost("");
@@ -252,9 +310,21 @@ a.click();
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="flex flex-col gap-6 lg:col-span-2">
-            <h1 className="font-headline text-4xl font-bold text-primary">
-              Refine Your Draft
-            </h1>
+            <div className="flex items-center justify-between">
+              <h1 className="font-headline text-4xl font-bold text-primary">
+                Refine Your Draft
+              </h1>
+              {user && (
+                  <Button onClick={handleSavePost} disabled={isSaving}>
+                      {isSaving ? (
+                          <Loader2 className="animate-spin" />
+                      ) : (
+                          <Save className="mr-2" />
+                      )}
+                      Save Post
+                  </Button>
+              )}
+            </div>
             <Input
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
