@@ -17,6 +17,7 @@ const GenerateAndPostTweetInputSchema = z.object({
   topic: z.string().describe('The topic for the tweet to be generated.'),
   requirements: z
     .string()
+    .optional()
     .describe(
       'Specific requirements for the tweet (tone, keywords, etc.).'
     ),
