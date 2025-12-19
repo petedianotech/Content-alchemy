@@ -18,7 +18,6 @@ import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 import { generateTweet } from "@/ai/flows/generate-tweet";
 import { postTweet } from "@/ai/flows/post-tweet";
-import { generateTweetTopics } from "@/ai/flows/generate-tweet-topics";
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
 
 import { Button } from "@/components/ui/button";
@@ -50,15 +49,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
 
 const formSchema = z.object({
   niche: z.string().min(1, "Please select a niche."),
   topic: z
     .string()
-    .min(5, "Your topic needs to be a bit more descriptive.")
-    .max(100, "That's a long topic! Try to be more concise."),
+    .max(100, "That's a long topic! Try to be more concise.")
+    .optional(),
   style: z.string().optional(),
   tone: z.string().optional(),
   viral: z.boolean().default(false),
@@ -109,9 +106,7 @@ const tweetTones = [
 
 export default function TweetGenerator() {
   const [generatedTweet, setGeneratedTweet] = useState("");
-  const [suggestedTopics, setSuggestedTopics] = useState<string[]>([]);
   const [isGenerating, startGenerating] = useTransition();
-  const [isGeneratingTopics, startGeneratingTopics] = useTransition();
   const [isPosting, startPosting] = useTransition();
   const [isSaving, startSaving] = useTransition();
   const { toast } = useToast();
@@ -131,8 +126,6 @@ export default function TweetGenerator() {
     },
   });
 
-  const nicheValue = form.watch("niche");
-
   useEffect(() => {
     async function loadSettings() {
       if (user && firestore) {
@@ -149,29 +142,6 @@ export default function TweetGenerator() {
     }
   }, [user, firestore, form, isUserLoading]);
 
-  const handleGenerateTopics = () => {
-    if (!nicheValue) {
-      toast({
-        variant: "destructive",
-        title: "Niche not selected",
-        description: "Please select a niche before generating topics.",
-      });
-      return;
-    }
-    startGeneratingTopics(async () => {
-      setSuggestedTopics([]);
-      try {
-        const result = await generateTweetTopics({ niche: nicheValue });
-        setSuggestedTopics(result.topics);
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Topic Generation Failed",
-          description: error.message || "Could not generate topics at this time.",
-        });
-      }
-    });
-  };
 
   const handleGenerate = (values: FormValues) => {
     startGenerating(async () => {
@@ -304,52 +274,7 @@ export default function TweetGenerator() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="topic"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Specific Topic</FormLabel>
-                      <div className="flex gap-2">
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., 'The future of AI in marketing'"
-                            {...field}
-                          />
-                        </FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button type="button" variant="outline" size="icon" onClick={handleGenerateTopics} disabled={isGeneratingTopics || !nicheValue}>
-                              {isGeneratingTopics ? <Loader2 className="animate-spin" /> : <Lightbulb />}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-80">
-                             <div className="grid gap-4">
-                                <div className="space-y-2">
-                                  <h4 className="font-medium leading-none">Suggested Topics</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    Based on the &quot;{nicheValue}&quot; niche.
-                                  </p>
-                                </div>
-                                <div className="grid gap-2">
-                                {suggestedTopics.length > 0 ? (
-                                    suggestedTopics.map((topic, i) => (
-                                    <Button key={i} variant="ghost" className="justify-start" onClick={() => form.setValue('topic', topic)}>
-                                        {topic}
-                                    </Button>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">No suggestions yet. Click generate!</p>
-                                )}
-                                </div>
-                              </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                
                 <FormField
                   control={form.control}
                   name="style"

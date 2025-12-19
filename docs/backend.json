@@ -116,8 +116,7 @@
             },
             "required": [
                 "userId",
-                "niche",
-                "topic"
+                "niche"
             ]
         }
     },

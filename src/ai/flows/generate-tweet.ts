@@ -15,8 +15,9 @@ const GenerateTweetInputSchema = z.object({
   niche: z.string().describe('The general category or niche of the tweet.'),
   topic: z
     .string()
+    .optional()
     .describe(
-      'The specific subject of the tweet, within the selected niche.'
+      'The specific subject of the tweet, within the selected niche. If not provided, the AI should generate a relevant topic.'
     ),
   style: z
     .string()
@@ -57,7 +58,7 @@ const prompt = ai.definePrompt({
 Your task is to generate a short, engaging tweet based on the following criteria.
 
 - Niche/Category: {{{niche}}}
-- Specific Topic: {{{topic}}}
+{{#if topic}}- Specific Topic: {{{topic}}}{{else}}- Specific Topic: You must come up with a relevant and engaging topic within the given niche.{{/if}}
 {{#if style}}- Writing Style: {{{style}}}{{/if}}
 {{#if tone}}- Tone: {{{tone}}}{{/if}}
 {{#if keywords}}- Keywords/Hashtags: {{{keywords}}}{{/if}}

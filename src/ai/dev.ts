@@ -15,4 +15,3 @@ import '@/ai/flows/post-tweet.ts';
 import '@/ai/flows/generate-and-post-tweet.ts';
 import '@/ai/flows/scheduled-tweet-flow.ts';
 import '@/ai/flows/generate-chat-response.ts';
-import '@/ai/flows/generate-tweet-topics.ts';
