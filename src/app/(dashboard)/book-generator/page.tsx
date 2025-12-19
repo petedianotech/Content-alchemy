@@ -11,6 +11,7 @@ import {
   Sparkles,
   BookMarked,
   Layers,
+  Smile,
 } from "lucide-react";
 
 import { generateBookOutline } from "@/ai/flows/generate-book-outline";
@@ -37,6 +38,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -56,7 +64,21 @@ const formSchema = z.object({
     .min(10, "Your idea needs to be a bit more descriptive.")
     .max(500, "That's a long idea! Try to be more concise."),
   chapters: z.number().min(5).max(50).default(25),
+  mood: z.string().min(1, "Please select a mood for the book."),
 });
+
+const moods = [
+    "Adventurous",
+    "Suspenseful",
+    "Mysterious",
+    "Romantic",
+    "Humorous",
+    "Somber",
+    "Uplifting",
+    "Tense",
+    "Whimsical",
+    "Dark",
+];
 
 type View = "form" | "loading" | "results";
 
@@ -72,6 +94,7 @@ export default function BookGenerator() {
       genre: "",
       idea: "",
       chapters: 25,
+      mood: "Adventurous",
     },
   });
 
@@ -127,7 +150,7 @@ export default function BookGenerator() {
         <h1 className="font-headline text-4xl font-bold text-primary mb-6">
           Your Book Outline
         </h1>
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="grid gap-8">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 font-headline">
@@ -142,29 +165,27 @@ export default function BookGenerator() {
                     </ul>
                 </CardContent>
             </Card>
-            <div className="md:col-span-2">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 font-headline">
-                            <Layers /> Chapter Outline
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Accordion type="single" collapsible className="w-full">
-                            {results?.outline.map((chapter, index) => (
-                                <AccordionItem value={`item-${index}`} key={index}>
-                                    <AccordionTrigger className="text-lg">
-                                        Chapter {index + 1}: {chapter.title}
-                                    </AccordionTrigger>
-                                    <AccordionContent className="text-base text-muted-foreground">
-                                        {chapter.description}
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    </CardContent>
-                </Card>
-            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-headline">
+                        <Layers /> Chapter Outline
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
+                        {results?.outline.map((chapter, index) => (
+                            <AccordionItem value={`item-${index}`} key={index}>
+                                <AccordionTrigger className="text-lg text-left">
+                                    {chapter.title}
+                                </AccordionTrigger>
+                                <AccordionContent className="text-base text-muted-foreground whitespace-pre-line">
+                                    {chapter.description}
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                </CardContent>
+            </Card>
         </div>
       </div>
     );
@@ -190,32 +211,10 @@ export default function BookGenerator() {
                 Describe Your Book
               </CardTitle>
               <CardDescription>
-                Provide the genre and plot for your story.
+                Provide the genre, mood, and plot for your story.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <FormField
-                control={form.control}
-                name="genre"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2 text-lg">
-                      <BookMarked /> Genre
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., 'Dystopian Sci-Fi', 'Cozy Mystery', 'High Fantasy'"
-                        {...field}
-                        className="p-6 text-base"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      What is the genre of your book?
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={form.control}
                 name="idea"
@@ -239,6 +238,50 @@ export default function BookGenerator() {
                   </FormItem>
                 )}
               />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                    control={form.control}
+                    name="genre"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="flex items-center gap-2 text-lg">
+                        <BookMarked /> Genre
+                        </FormLabel>
+                        <FormControl>
+                        <Input
+                            placeholder="e.g., 'Dystopian Sci-Fi'"
+                            {...field}
+                            className="p-6 text-base"
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="mood"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="flex items-center gap-2 text-lg">
+                            <Smile /> Mood
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger className="p-6 text-base">
+                                <SelectValue placeholder="Select a mood" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {moods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
                 name="chapters"
@@ -249,15 +292,15 @@ export default function BookGenerator() {
                     </FormLabel>
                      <FormControl>
                       <Slider
-                        min={5}
-                        max={50}
+                        min={10}
+                        max={40}
                         step={1}
                         value={[field.value]}
                         onValueChange={(vals) => field.onChange(vals[0])}
                       />
                     </FormControl>
                      <FormDescription>
-                      Choose how many chapters you want in your book.
+                      Choose how many chapters you want in your book (e.g., for a ~300 page book).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
