@@ -12,6 +12,7 @@ import {
   Twitter,
   Youtube,
   Home,
+  MessageSquare,
 } from 'lucide-react';
 
 import AlchemyIcon from '@/components/icons/AlchemyIcon';
@@ -38,6 +39,11 @@ const menuItems = [
     href: '/',
     label: 'Dashboard',
     icon: Home,
+  },
+    {
+    href: '/chat',
+    label: 'Chat',
+    icon: MessageSquare,
   },
   {
     href: '/blog-post-generator',

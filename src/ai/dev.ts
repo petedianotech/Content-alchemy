@@ -1,3 +1,4 @@
+'use server';
 import { config } from 'dotenv';
 config();
 
@@ -11,3 +12,5 @@ import '@/ai/flows/generate-book-outline.ts';
 import '@/ai/flows/generate-tweet.ts';
 import '@/ai/flows/post-tweet.ts';
 import '@/ai/flows/generate-and-post-tweet.ts';
+import '@/ai/flows/generate-chat-response.ts';
+
