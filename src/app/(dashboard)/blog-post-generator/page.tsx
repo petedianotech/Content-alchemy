@@ -619,7 +619,7 @@ const handleSaveDefaults = (values: FormValues) => {
                 )}
               />
             </CardContent>
-            <CardFooter className="flex-col gap-2 items-stretch">
+            <CardFooter className="flex-col gap-4 items-stretch">
               <Button
                 type="submit"
                 size="lg"

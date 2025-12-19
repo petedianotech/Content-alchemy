@@ -65,7 +65,12 @@ const scheduledBlogPostFlowInternal = ai.defineFlow(
 
       if (docSnap.exists()) {
         console.log('Found saved blog post settings, using them for generation.');
-        input = docSnap.data() as GenerateBlogPostDraftInput;
+        const settingsData = docSnap.data();
+        // Ensure topic and requirements are strings, providing fallbacks if they are missing
+        input = {
+          topic: settingsData.topic || input.topic,
+          requirements: settingsData.requirements || input.requirements,
+        };
       } else {
         console.log(
           'No saved blog settings found for user. Using default input.'
@@ -81,11 +86,12 @@ const scheduledBlogPostFlowInternal = ai.defineFlow(
     console.log('Running scheduled blog post flow with input:', input);
     try {
         const result = await generateBlogPostDraft(input);
-        console.log('Scheduled blog post flow result:', result.draft.substring(0, 100));
-        // TODO: Add logic to post the draft to Blogger API
+        console.log('Scheduled blog post generated. Title:', result.draft.substring(0, 100).split('\n')[0]);
+        // TODO: Add logic here to call the Blogger API using the user's OAuth token
+        // Example: await postToBlogger(SCHEDULED_POST_USER_ID, result.draft);
         return { success: true, draft: result.draft };
     } catch (error: any) {
-        console.error('Failed to generate or post blog draft:', error);
+        console.error('Failed to generate blog draft:', error);
         return { success: false, error: error.message };
     }
   }
