@@ -5,9 +5,10 @@ import { useState, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { BookOpen, Loader2, PanelLeft, ArrowLeft, Wand2, ClipboardCopy, FileText } from 'lucide-react';
+import { BookOpen, Loader2, PanelLeft, ArrowLeft, Wand2, ClipboardCopy, FileText, ShoppingCart, Image as ImageIcon } from 'lucide-react';
 
 import { generateBookChapter } from '@/ai/flows/generate-book-chapter';
+import { generateBookMarketing, type GenerateBookMarketingOutput } from '@/ai/flows/generate-book-marketing';
 import type { GenerateBookOutlineOutput } from '@/ai/flows/generate-book-outline';
 
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,9 @@ export default function BookWriterPage() {
     const { toast } = useToast();
 
     const [generatingChapter, setGeneratingChapter] = useState<string | null>(null);
+    const [marketingMaterials, setMarketingMaterials] = useState<GenerateBookMarketingOutput | null>(null);
     const [isGenerating, startGenerating] = useTransition();
+    const [isGeneratingMarketing, startGeneratingMarketing] = useTransition();
 
     const bookDocRef = useMemoFirebase(() => {
         if (!user || !firestore || !bookId) return null;
@@ -56,11 +59,11 @@ export default function BookWriterPage() {
                 // Find the content of the most recently generated chapter for context
                 let previousChapterSummary: string | undefined;
                 if (chapterIndex > 0) {
-                    for (let i = chapterIndex - 1; i >= 0; i--) {
-                        const prevChapterTitle = book.outline[i].title;
-                        if (book.chapters && book.chapters[prevChapterTitle]) {
-                            previousChapterSummary = book.chapters[prevChapterTitle];
-                            break;
+                     for (let i = chapterIndex - 1; i >= 0; i--) {
+                        const prevChapter = book.outline[i];
+                        if (prevChapter && book.chapters && book.chapters[prevChapter.title]) {
+                            previousChapterSummary = book.chapters[prevChapter.title];
+                            break; 
                         }
                     }
                 }
@@ -96,6 +99,32 @@ export default function BookWriterPage() {
                 });
             } finally {
                 setGeneratingChapter(null);
+            }
+        });
+    };
+
+    const handleGenerateMarketing = () => {
+        if (!book) return;
+        startGeneratingMarketing(async () => {
+            try {
+                const result = await generateBookMarketing({
+                    title: book.title,
+                    genre: book.genre,
+                    mood: book.mood,
+                    idea: book.idea,
+                });
+                setMarketingMaterials(result);
+                 toast({
+                    title: 'Marketing Kit Generated!',
+                    description: `Your marketing materials are ready.`,
+                });
+            } catch(e) {
+                console.error(e);
+                toast({
+                    variant: 'destructive',
+                    title: 'Generation Failed',
+                    description: 'Could not generate marketing materials.',
+                });
             }
         });
     };
@@ -211,7 +240,8 @@ export default function BookWriterPage() {
                 <div className="space-y-8">
                     {book.outline.map((chapter, index) => {
                         // Don't render an editor for structural items like "Act I"
-                        if (chapter.description.toLowerCase().startsWith('act')) return null;
+                        if (chapter.description.toLowerCase().includes('act i') || chapter.description.toLowerCase().includes('act ii') || chapter.description.toLowerCase().includes('act iii')) return null;
+
 
                         return (
                             <div key={chapter.title}>
@@ -251,6 +281,52 @@ export default function BookWriterPage() {
                         )
                     })}
                 </div>
+                 <Card className="mt-12">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl">Marketing & Publishing Kit</CardTitle>
+                        <CardDescription>Generate your book description, cover art prompt, and pricing.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {!marketingMaterials && (
+                             <Button onClick={handleGenerateMarketing} disabled={isGeneratingMarketing}>
+                                {isGeneratingMarketing ? <Loader2 className="animate-spin mr-2" /> : <Wand2 className="mr-2" />}
+                                Generate Marketing Kit
+                            </Button>
+                        )}
+                       
+                        {marketingMaterials && (
+                            <div className="space-y-6 animate-in fade-in">
+                                <div>
+                                    <h3 className="font-headline text-lg flex items-center gap-2 mb-2"><ImageIcon/> Book Cover Prompt</h3>
+                                    <div className="p-4 bg-muted rounded-md text-sm relative">
+                                        <p className="text-muted-foreground">{marketingMaterials.coverImagePrompt}</p>
+                                         <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => copyToClipboard(marketingMaterials.coverImagePrompt, "Cover Prompt")}>
+                                            <ClipboardCopy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                 <div>
+                                    <h3 className="font-headline text-lg flex items-center gap-2 mb-2"><FileText/> Book Description</h3>
+                                     <div className="p-4 bg-muted rounded-md text-sm relative">
+                                        <p className="text-muted-foreground whitespace-pre-wrap">{marketingMaterials.bookDescription}</p>
+                                         <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => copyToClipboard(marketingMaterials.bookDescription, "Book Description")}>
+                                            <ClipboardCopy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                 <div>
+                                    <h3 className="font-headline text-lg flex items-center gap-2 mb-2"><ShoppingCart/> Pricing Suggestion</h3>
+                                     <div className="p-4 bg-muted rounded-md text-sm relative">
+                                        <p className="text-muted-foreground whitespace-pre-wrap">{marketingMaterials.pricingSuggestion}</p>
+                                        <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => copyToClipboard(marketingMaterials.pricingSuggestion, "Pricing Suggestion")}>
+                                            <ClipboardCopy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
