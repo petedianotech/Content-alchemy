@@ -10,8 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {googleAI} from '@genkit-ai/google-genai';
-import {Message} from 'genkit/experimental/ai';
-import {z} from 'genkit/zod';
+import {Message, z} from 'genkit';
 
 const GenerateChatResponseInputSchema = z.object({
   prompt: z.string().describe("The user's message."),
