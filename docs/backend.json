@@ -85,9 +85,13 @@
                     "type": "string",
                     "description": "The UID of the user who owns these settings."
                 },
+                "niche": {
+                    "type": "string",
+                    "description": "The default niche or category for tweets."
+                },
                 "topic": {
                     "type": "string",
-                    "description": "The default niche or topic for tweets."
+                    "description": "The default specific topic for tweets."
                 },
                 "style": {
                     "type": "string",
@@ -111,7 +115,9 @@
                 }
             },
             "required": [
-                "userId"
+                "userId",
+                "niche",
+                "topic"
             ]
         }
     },

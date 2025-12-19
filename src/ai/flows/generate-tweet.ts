@@ -12,7 +12,12 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateTweetInputSchema = z.object({
-  topic: z.string().describe('The niche or topic of the tweet.'),
+  niche: z.string().describe('The general category or niche of the tweet.'),
+  topic: z
+    .string()
+    .describe(
+      'The specific subject of the tweet, within the selected niche.'
+    ),
   style: z
     .string()
     .optional()
@@ -37,7 +42,9 @@ const GenerateTweetOutputSchema = z.object({
 });
 export type GenerateTweetOutput = z.infer<typeof GenerateTweetOutputSchema>;
 
-export async function generateTweet(input: GenerateTweetInput): Promise<GenerateTweetOutput> {
+export async function generateTweet(
+  input: GenerateTweetInput
+): Promise<GenerateTweetOutput> {
   return generateTweetFlow(input);
 }
 
@@ -45,18 +52,19 @@ const prompt = ai.definePrompt({
   name: 'generateTweetPrompt',
   input: {schema: GenerateTweetInputSchema},
   output: {schema: GenerateTweetOutputSchema},
-  prompt: `You are an expert social media manager who specializes in writing viral tweets for X (formerly Twitter).
+  prompt: `You are an expert social media manager who specializes in writing viral tweets for X (formerly Twitter). Your writing is indistinguishable from a human's. You NEVER sound like an AI. Your content is always original and uses simple, clear English.
 
 Your task is to generate a short, engaging tweet based on the following criteria.
 
-- Niche/Topic: {{{topic}}}
+- Niche/Category: {{{niche}}}
+- Specific Topic: {{{topic}}}
 {{#if style}}- Writing Style: {{{style}}}{{/if}}
 {{#if tone}}- Tone: {{{tone}}}{{/if}}
 {{#if keywords}}- Keywords/Hashtags: {{{keywords}}}{{/if}}
 {{#if viral}}- Optimization: Optimize for maximum virality and engagement. Use techniques like asking questions, stating a controversial opinion, or using a strong hook.{{/if}}
 
-Ensure the content is concise and optimized for the X platform. Include relevant hashtags. The style should be human-like and not detectable as AI.
-The final output must be 280 characters or less.
+Ensure the content is concise and perfectly optimized for the X platform. Include relevant hashtags.
+The final output must be 280 characters or less. The content MUST be original and written in a simple, human-like manner.
   `,
 });
 

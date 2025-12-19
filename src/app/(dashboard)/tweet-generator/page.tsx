@@ -50,6 +50,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
+  niche: z.string().min(1, "Please select a niche."),
   topic: z
     .string()
     .min(5, "Your topic needs to be a bit more descriptive.")
@@ -61,6 +62,46 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const niches = [
+  "Tech & AI",
+  "Marketing & Business",
+  "Health & Fitness",
+  "Personal Finance & Investing",
+  "Web3 & Crypto",
+  "Self-Improvement",
+  "Comedy & Memes",
+  "Science & Space",
+  "History",
+  "Philosophy & Psychology",
+];
+
+const writingStyles = [
+  "Bold & Controversial",
+  "Storytelling",
+  "Value-Packed & Educational",
+  "Humorous & Witty",
+  "Inspirational & Motivational",
+  "Question-Based",
+  "Personal & Relatable",
+  "Professional & Authoritative",
+  "Minimalist & Direct",
+  "Curated & Informative",
+];
+
+const tweetTones = [
+  "Urgent",
+  "Intriguing",
+  "Excited",
+  "Playful",
+  "Serious",
+  "Empathetic",
+  "Sarcastic",
+  "Optimistic",
+  "Pessimistic",
+  "Curious",
+];
+
 
 export default function TweetGenerator() {
   const [generatedTweet, setGeneratedTweet] = useState("");
@@ -75,8 +116,9 @@ export default function TweetGenerator() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      niche: "Tech & AI",
       topic: "",
-      style: "Friendly",
+      style: "Value-Packed & Educational",
       tone: "Informative",
       viral: true,
       keywords: "",
@@ -212,10 +254,30 @@ export default function TweetGenerator() {
               <CardContent className="space-y-6">
                 <FormField
                   control={form.control}
+                  name="niche"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Niche</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a niche" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {niches.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="topic"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Niche / Topic</FormLabel>
+                      <FormLabel>Specific Topic</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="e.g., 'The future of AI in marketing'"
@@ -239,11 +301,7 @@ export default function TweetGenerator() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Professional">Professional</SelectItem>
-                          <SelectItem value="Friendly">Friendly</SelectItem>
-                          <SelectItem value="Humorous">Humorous</SelectItem>
-                          <SelectItem value="Authoritative">Authoritative</SelectItem>
-                          <SelectItem value="Witty">Witty</SelectItem>
+                           {writingStyles.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -263,11 +321,7 @@ export default function TweetGenerator() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Informative">Informative</SelectItem>
-                          <SelectItem value="Inspirational">Inspirational</SelectItem>
-                          <SelectItem value="Question">Question</SelectItem>
-                          <SelectItem value="Controversial">Controversial</SelectItem>
-                          <SelectItem value="Educational">Educational</SelectItem>
+                          {tweetTones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       <FormMessage />
