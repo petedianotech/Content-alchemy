@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MessageSquare, Bot, User, Send, Loader2, Sparkles, CornerDownLeft } from 'lucide-react';
-import type { Part } from 'genkit';
 
 import { generateChatResponse } from '@/ai/flows/generate-chat-response';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,7 @@ const formSchema = z.object({
 
 interface Message {
   role: 'user' | 'model';
-  parts: Part[];
+  content: { text: string }[];
 }
 
 export default function ChatPage() {
@@ -45,14 +44,14 @@ export default function ChatPage() {
   }, [messages]);
 
   const handleSendMessage = (values: z.infer<typeof formSchema>) => {
-    const userMessage: Message = { role: 'user', parts: [{ text: values.prompt }] };
+    const userMessage: Message = { role: 'user', content: [{ text: values.prompt }] };
     setMessages(prev => [...prev, userMessage]);
     form.reset();
 
     startGenerating(async () => {
       try {
         const result = await generateChatResponse({ prompt: values.prompt, history: messages });
-        const modelMessage: Message = { role: 'model', parts: [{ text: result.response }] };
+        const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
         setMessages(prev => [...prev, modelMessage]);
       } catch (error) {
         toast({
@@ -96,7 +95,7 @@ export default function ChatPage() {
                 </div>
               )}
               <div className={cn('max-w-2xl rounded-lg p-3', msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border')}>
-                <p className="whitespace-pre-wrap">{msg.parts[0].text}</p>
+                <p className="whitespace-pre-wrap">{msg.content[0].text}</p>
               </div>
               {msg.role === 'user' && (
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
