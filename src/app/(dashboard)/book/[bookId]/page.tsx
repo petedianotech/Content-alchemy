@@ -53,7 +53,17 @@ export default function BookWriterPage() {
         setGeneratingChapter(chapterTitle);
         startGenerating(async () => {
             try {
-                const previousChapterSummary = chapterIndex > 0 ? book.chapters[book.outline[chapterIndex - 1].title] : undefined;
+                // Find the content of the most recently generated chapter for context
+                let previousChapterSummary: string | undefined;
+                if (chapterIndex > 0) {
+                    for (let i = chapterIndex - 1; i >= 0; i--) {
+                        const prevChapterTitle = book.outline[i].title;
+                        if (book.chapters && book.chapters[prevChapterTitle]) {
+                            previousChapterSummary = book.chapters[prevChapterTitle];
+                            break;
+                        }
+                    }
+                }
 
                 const result = await generateBookChapter({
                     title: chapterTitle,
@@ -61,7 +71,7 @@ export default function BookWriterPage() {
                     genre: book.genre,
                     mood: book.mood,
                     overallPlot: book.idea,
-                    previousChapterSummary: previousChapterSummary ? previousChapterSummary.substring(0, 500) : undefined,
+                    previousChapterSummary: previousChapterSummary ? previousChapterSummary.substring(0, 1000) : undefined,
                 });
 
                 const newContent = `${result.chapterContent}\n\n--- IMAGE PROMPTS ---\n${result.imagePrompts.map(p => `[${p.location}]: ${p.prompt}`).join('\n')}`;
@@ -113,9 +123,14 @@ export default function BookWriterPage() {
         return book.outline
             .map(chapter => {
                 const title = chapter.title;
-                const content = book.chapters[title] || '(Chapter content not generated yet)';
-                return `# ${title}\n\n${content}`;
+                const content = book.chapters[title];
+                // Only include chapters with content
+                if (content) {
+                  return `# ${title}\n\n${content}`;
+                }
+                return null;
             })
+            .filter(Boolean) // Remove null entries
             .join('\n\n\n');
     }
 
@@ -194,42 +209,47 @@ export default function BookWriterPage() {
                 </div>
 
                 <div className="space-y-8">
-                    {book.outline.map((chapter, index) => (
-                        <div key={chapter.title}>
-                            <div className="flex justify-between items-center mb-2">
-                                <h2 id={chapter.title} className="text-3xl font-headline font-bold text-primary scroll-mt-20">
-                                    {chapter.title}
-                                </h2>
-                                {book.chapters[chapter.title] && (
-                                     <Button variant="ghost" size="sm" onClick={() => copyToClipboard(book.chapters[chapter.title], chapter.title)}>
-                                        <ClipboardCopy className="mr-2 h-4 w-4" />
-                                        Copy Chapter
-                                    </Button>
+                    {book.outline.map((chapter, index) => {
+                        // Don't render an editor for structural items like "Act I"
+                        if (chapter.description.toLowerCase().startsWith('act')) return null;
+
+                        return (
+                            <div key={chapter.title}>
+                                <div className="flex justify-between items-center mb-2">
+                                    <h2 id={chapter.title} className="text-3xl font-headline font-bold text-primary scroll-mt-20">
+                                        {chapter.title}
+                                    </h2>
+                                    {book.chapters && book.chapters[chapter.title] && (
+                                        <Button variant="ghost" size="sm" onClick={() => copyToClipboard(book.chapters[chapter.title], chapter.title)}>
+                                            <ClipboardCopy className="mr-2 h-4 w-4" />
+                                            Copy Chapter
+                                        </Button>
+                                    )}
+                                </div>
+                                
+                                {isGenerating && generatingChapter === chapter.title ? (
+                                    <div className="w-full min-h-[300px] flex flex-col justify-center items-center bg-card rounded-md border">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                                        <p className="text-muted-foreground">Generating chapter...</p>
+                                    </div>
+                                ) : book.chapters && book.chapters[chapter.title] ? (
+                                <Textarea
+                                    value={book.chapters[chapter.title]}
+                                    onChange={(e) => handleContentChange(chapter.title, e.target.value)}
+                                    placeholder={`Start writing content for this chapter...`}
+                                    className="min-h-[300px] w-full text-lg leading-relaxed bg-card"
+                                />
+                                ) : (
+                                    <div className="w-full min-h-[300px] flex justify-center items-center bg-card rounded-md border-2 border-dashed">
+                                        <Button size="lg" onClick={() => handleGenerateChapter(chapter.title, chapter.description, index)} disabled={isGenerating}>
+                                            <Wand2 className="mr-2" />
+                                            Generate Chapter Content
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
-                            
-                            {isGenerating && generatingChapter === chapter.title ? (
-                                <div className="w-full min-h-[300px] flex flex-col justify-center items-center bg-card rounded-md border">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-                                    <p className="text-muted-foreground">Generating chapter...</p>
-                                </div>
-                            ) : book.chapters[chapter.title] ? (
-                               <Textarea
-                                   value={book.chapters[chapter.title]}
-                                   onChange={(e) => handleContentChange(chapter.title, e.target.value)}
-                                   placeholder={`Start writing content for this chapter...`}
-                                   className="min-h-[300px] w-full text-lg leading-relaxed bg-card"
-                               />
-                            ) : (
-                                <div className="w-full min-h-[300px] flex justify-center items-center bg-card rounded-md border-2 border-dashed">
-                                     <Button size="lg" onClick={() => handleGenerateChapter(chapter.title, chapter.description, index)} disabled={isGenerating}>
-                                        <Wand2 className="mr-2" />
-                                        Generate Chapter Content
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
         </div>
