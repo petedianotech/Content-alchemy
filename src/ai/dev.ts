@@ -7,7 +7,6 @@ import '@/ai/flows/ensure-adsense-compliance.ts';
 import '@/ai/flows/generate-blog-post-draft.ts';
 import '@/ai/flows/generate-facebook-post.ts';
 import '@/ai/flows/generate-youtube-script.ts';
-import '@/ai-flows/generate-tweet-topics.ts';
 import '@/ai/flows/generate-image-prompt.ts';
 import '@/ai/flows/generate-image.ts';
 import '@/ai/flows/generate-book-outline.ts';
@@ -17,6 +16,5 @@ import '@/ai/flows/generate-tweet.ts';
 import '@/ai/flows/post-tweet.ts';
 import '@/ai/flows/generate-and-post-tweet.ts';
 import '@/ai/flows/scheduled-tweet-flow.ts';
+import '@/ai/flows/scheduled-blog-post-flow.ts';
 import '@/ai/flows/generate-chat-response.ts';
-
-    

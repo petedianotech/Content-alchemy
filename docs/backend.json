@@ -75,6 +75,35 @@
                 "lastModified"
             ]
         },
+        "BlogSettings": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "BlogSettings",
+            "type": "object",
+            "description": "Stores a user's default settings for automated blog post generation.",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "description": "The UID of the user who owns these settings."
+                },
+                "topic": {
+                    "type": "string",
+                    "description": "The default topic for automated blog posts."
+                },
+                "requirements": {
+                    "type": "string",
+                    "description": "The default requirements (tone, keywords, etc.) for automated blog posts."
+                },
+                "lastModified": {
+                    "type": "object",
+                    "description": "Server-side timestamp of when the settings were last modified."
+                }
+            },
+            "required": [
+                "userId",
+                "topic",
+                "requirements"
+            ]
+        },
         "TweetSettings": {
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "TweetSettings",
@@ -201,6 +230,13 @@
                 },
                 "description": "Stores blog posts owned by a specific user."
             },
+             {
+                "path": "/users/{userId}/blogSettings/default",
+                "schema": {
+                    "$ref": "#/entities/BlogSettings"
+                },
+                "description": "Stores the default blog generation settings for a specific user."
+            },
             {
                 "path": "/users/{userId}/tweetSettings/default",
                 "schema": {
@@ -218,5 +254,3 @@
         ]
     }
 }
-
-    

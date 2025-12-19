@@ -23,6 +23,8 @@ import {
   collection,
   addDoc,
   serverTimestamp,
+  doc,
+  setDoc
 } from 'firebase/firestore';
 
 
@@ -73,6 +75,7 @@ const formSchema = z.object({
     .max(500, "Requirements are getting a bit long. Keep it focused!"),
 });
 
+type FormValues = z.infer<typeof formSchema>;
 type View = "form" | "loading" | "editor";
 
 export default function BlogPostGenerator() {
@@ -89,13 +92,14 @@ export default function BlogPostGenerator() {
 
   const [isGenerating, startGenerating] = useTransition();
   const [isSaving, startSaving] = useTransition();
+  const [isSavingDefaults, startSavingDefaults] = useTransition();
   const [isSuggesting, startSuggesting] = useTransition();
   const [isChecking, startChecking] = useTransition();
   const [isGeneratingFacebook, startGeneratingFacebook] = useTransition();
 
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       topic: "",
@@ -103,7 +107,7 @@ export default function BlogPostGenerator() {
     },
   });
 
-  const handleGenerate = (values: z.infer<typeof formSchema>) => {
+  const handleGenerate = (values: FormValues) => {
     setView("loading");
     startGenerating(async () => {
       try {
@@ -168,6 +172,36 @@ export default function BlogPostGenerator() {
           });
     });
 };
+
+const handleSaveDefaults = (values: FormValues) => {
+    if (!user || !firestore) {
+      toast({ variant: "destructive", title: "You must be logged in to save settings." });
+      return;
+    }
+    startSavingDefaults(async () => {
+      const settingsDocRef = doc(firestore, 'users', user.uid, 'blogSettings', 'default');
+      const settingsData = {
+        ...values,
+        userId: user.uid,
+        lastModified: serverTimestamp(),
+      };
+      
+      setDoc(settingsDocRef, settingsData, { merge: true })
+        .then(() => {
+            toast({ title: "Default settings saved!", description: "The scheduled blog posts will now use these settings." });
+        })
+        .catch((error) => {
+            console.error("Error saving settings: ", error);
+             const permissionError = new FirestorePermissionError({
+                path: settingsDocRef.path,
+                operation: 'write',
+                requestResourceData: settingsData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: "destructive", title: "Save Failed", description: "Could not save your settings." });
+        });
+    });
+  };
 
   const handleGetSuggestions = () => {
     startSuggesting(async () => {
@@ -585,7 +619,7 @@ export default function BlogPostGenerator() {
                 )}
               />
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-col gap-2 items-stretch">
               <Button
                 type="submit"
                 size="lg"
@@ -599,6 +633,15 @@ export default function BlogPostGenerator() {
                 )}
                 Generate Post
               </Button>
+               <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={form.handleSubmit(handleSaveDefaults)}
+                    disabled={isSavingDefaults || !user}
+                >
+                    {isSavingDefaults ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                    Save as Automation Default
+                </Button>
             </CardFooter>
           </form>
         </Form>
