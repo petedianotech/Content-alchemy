@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookText, Facebook, Youtube, Image, BookOpen, Twitter, ArrowRight } from "lucide-react";
+import { BookText, Facebook, Youtube, Image, BookOpen, Twitter, ArrowRight, MessageSquare } from "lucide-react";
 import {
   Card,
   CardDescription,
@@ -14,11 +14,23 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
 
   const features = [
+      {
+      title: "AI Chat",
+      description: "Converse with an intelligent AI assistant.",
+      href: "/chat",
+      icon: <MessageSquare className="h-8 w-8" />,
+    },
     {
       title: "AI Blog Post Generator",
       description: "Create full-length, SEO-friendly blog articles.",
       href: "/blog-post-generator",
       icon: <BookText className="h-8 w-8" />,
+    },
+    {
+      title: "AI Image Generator",
+      description: "Turn your text prompts into stunning visuals.",
+      href: "/image-generator",
+      icon: <Image className="h-8 w-8" />,
     },
     {
       title: "AI Facebook Post Maker",

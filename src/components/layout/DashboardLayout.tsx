@@ -66,6 +66,11 @@ const menuItems = [
     icon: ImageIcon,
   },
   {
+    href: '/image-generator',
+    label: 'Image Generator',
+    icon: ImageIcon,
+  },
+  {
     href: '/book-generator',
     label: 'Book Generator',
     icon: BookOpen,
