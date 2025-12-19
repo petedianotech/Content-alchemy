@@ -2,12 +2,11 @@
 'use server';
 
 /**
- * @fileOverview A flow for generating and emailing a scheduled blog post.
+ * @fileOverview A flow for generating a scheduled blog post.
  */
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { Resend } from 'resend';
 import { generateBlogPostDraft, type GenerateBlogPostDraftInput } from './generate-blog-post-draft';
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps } from 'firebase/app';
@@ -18,14 +17,13 @@ if (!getApps().length) {
 }
 const firestore = getFirestore();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 // This is the user ID whose settings will be used for scheduled posts.
 const SCHEDULED_POST_USER_ID = process.env.PRIMARY_USER_UID;
 
 const ScheduledBlogPostOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
+  draft: z.string().optional(),
 });
 export type ScheduledBlogPostOutput = z.infer<typeof ScheduledBlogPostOutputSchema>;
 
@@ -45,12 +43,6 @@ const scheduledBlogPostFlowInternal = ai.defineFlow(
       console.error(errorMsg);
       return { success: false, message: errorMsg };
     }
-     if (!process.env.RESEND_API_KEY) {
-      const errorMsg = 'RESEND_API_KEY environment variable is not set.';
-      console.error(errorMsg);
-      return { success: false, message: errorMsg };
-    }
-
 
     // Define a fallback input in case settings are not found in Firestore.
     let input: GenerateBlogPostDraftInput = {
@@ -74,36 +66,20 @@ const scheduledBlogPostFlowInternal = ai.defineFlow(
       }
     } catch (error) {
       console.error('Error fetching blog settings from Firestore:', error);
+      // We can still proceed with the default input
     }
 
     console.log('Running scheduled blog post flow with input:', input);
     try {
         const result = await generateBlogPostDraft(input);
-        const [title, ...contentParts] = result.draft.split('\\n\\n');
-        const content = contentParts.join('<br><br>');
-
-        const fromEmail = process.env.NEWSLETTER_FROM_EMAIL;
-        const toEmail = process.env.NEWSLETTER_TO_EMAIL;
-
-        if (!fromEmail || !toEmail) {
-            const errorMsg = "Newsletter 'from' and 'to' email addresses must be set in environment variables.";
-            console.error(errorMsg);
-            return { success: false, message: errorMsg };
-        }
-
-        await resend.emails.send({
-            from: fromEmail,
-            to: toEmail,
-            subject: `Your Automated Post: ${title}`,
-            html: `<h1>${title}</h1><br>${content}`,
-        });
-        
-        const successMsg = `Blog post generated and sent to ${toEmail}.`;
+        const successMsg = `Blog post draft generated successfully for topic: ${input.topic}`;
         console.log(successMsg);
-        return { success: true, message: successMsg };
+        // The generated draft is available in result.draft
+        // You could save it to Firestore, or integrate another service here.
+        return { success: true, message: successMsg, draft: result.draft };
 
     } catch (error: any) {
-        console.error('Failed to generate or send blog draft:', error);
+        console.error('Failed to generate blog draft:', error);
         return { success: false, message: error.message };
     }
   }
