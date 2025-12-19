@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -14,7 +15,7 @@ import {z} from 'genkit';
 const GenerateBookOutlineInputSchema = z.object({
   genre: z.string().describe('The genre of the book (e.g., Fantasy, Sci-Fi, Mystery).'),
   idea: z.string().describe('A brief description of the book idea or plot.'),
-  chapters: z.number().min(10).max(40).default(25).describe('The desired number of chapters.'),
+  chapters: z.number().min(5).max(20).default(15).describe('The desired number of chapters.'),
   mood: z.string().describe('The desired mood of the book (e.g., Suspenseful, Humorous, Romantic).'),
 });
 export type GenerateBookOutlineInput = z.infer<typeof GenerateBookOutlineInputSchema>;
@@ -40,7 +41,7 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateBookOutlineOutputSchema},
   prompt: `You are a world-class novelist and developmental editor who creates professional book outlines for publishing houses.
 
-Your task is to take a user's book idea and generate 3 compelling titles and a detailed, professional outline structured for a full-length novel of approximately 300-400 pages.
+Your task is to take a user's book idea and generate 3 compelling titles and a detailed, professional outline structured for a full-length novel.
 
 The outline MUST be written from a third-person point of view.
 

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition } from "react";
@@ -58,14 +59,27 @@ import { Slider } from "@/components/ui/slider";
 const formSchema = z.object({
   genre: z
     .string()
-    .min(3, "Please specify a genre."),
+    .min(1, "Please select a genre."),
   idea: z
     .string()
     .min(10, "Your idea needs to be a bit more descriptive.")
     .max(500, "That's a long idea! Try to be more concise."),
-  chapters: z.number().min(5).max(50).default(25),
+  chapters: z.number().min(5).max(20).default(15),
   mood: z.string().min(1, "Please select a mood for the book."),
 });
+
+const genres = [
+    "Fantasy",
+    "Science Fiction",
+    "Mystery",
+    "Thriller",
+    "Romance",
+    "Horror",
+    "Historical Fiction",
+    "Young Adult",
+    "Children's",
+    "Comedy"
+];
 
 const moods = [
     "Adventurous",
@@ -91,9 +105,9 @@ export default function BookGenerator() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      genre: "",
+      genre: "Fantasy",
       idea: "",
-      chapters: 25,
+      chapters: 15,
       mood: "Adventurous",
     },
   });
@@ -247,13 +261,16 @@ export default function BookGenerator() {
                         <FormLabel className="flex items-center gap-2 text-lg">
                         <BookMarked /> Genre
                         </FormLabel>
-                        <FormControl>
-                        <Input
-                            placeholder="e.g., 'Dystopian Sci-Fi'"
-                            {...field}
-                            className="p-6 text-base"
-                        />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger className="p-6 text-base">
+                                <SelectValue placeholder="Select a genre" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {genres.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                         <FormMessage />
                     </FormItem>
                     )}
@@ -270,7 +287,7 @@ export default function BookGenerator() {
                             <FormControl>
                             <SelectTrigger className="p-6 text-base">
                                 <SelectValue placeholder="Select a mood" />
-                            </SelectTrigger>
+                            </Trigger>
                             </FormControl>
                             <SelectContent>
                                 {moods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
@@ -292,15 +309,15 @@ export default function BookGenerator() {
                     </FormLabel>
                      <FormControl>
                       <Slider
-                        min={10}
-                        max={40}
+                        min={5}
+                        max={20}
                         step={1}
                         value={[field.value]}
                         onValueChange={(vals) => field.onChange(vals[0])}
                       />
                     </FormControl>
                      <FormDescription>
-                      Choose how many chapters you want in your book (e.g., for a ~300 page book).
+                      Choose how many chapters you want in your book.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
