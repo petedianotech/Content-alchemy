@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,7 +14,9 @@ import {
   BookMarked,
   Layers,
   Smile,
+  Save,
 } from "lucide-react";
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 import { generateBookOutline } from "@/ai/flows/generate-book-outline";
 import type { GenerateBookOutlineOutput } from "@/ai/flows/generate-book-outline";
@@ -55,6 +58,7 @@ import { useToast } from "@/hooks/use-toast";
 import AlchemyIcon from "@/components/icons/AlchemyIcon";
 import MagicWandIcon from "@/components/icons/MagicWandIcon";
 import { Slider } from "@/components/ui/slider";
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
 
 const formSchema = z.object({
   genre: z
@@ -100,7 +104,12 @@ export default function BookGenerator() {
   const [view, setView] = useState<View>("form");
   const [results, setResults] = useState<GenerateBookOutlineOutput | null>(null);
   const [isGenerating, startGenerating] = useTransition();
+  const [isSaving, startSaving] = useTransition();
   const { toast } = useToast();
+  const router = useRouter();
+
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -130,6 +139,58 @@ export default function BookGenerator() {
     });
   };
 
+  const handleSaveBook = () => {
+    if (!user || !firestore || !results) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "You must be logged in and have an outline to save a book.",
+        });
+        return;
+    }
+
+    startSaving(async () => {
+        const bookData = {
+            userId: user.uid,
+            title: results.titles[0], // Default to the first suggested title
+            titles: results.titles,
+            outline: results.outline,
+            genre: form.getValues('genre'),
+            mood: form.getValues('mood'),
+            idea: form.getValues('idea'),
+            chapters: {}, // Initialize empty chapters object
+            creationDate: serverTimestamp(),
+            lastModified: serverTimestamp(),
+        };
+
+        const booksCollection = collection(firestore, 'users', user.uid, 'books');
+
+        addDoc(booksCollection, bookData)
+          .then((docRef) => {
+            toast({
+                title: "Book Project Saved!",
+                description: "You are being redirected to the book writer.",
+            });
+            router.push(`/book/${docRef.id}`);
+          })
+          .catch((error) => {
+            console.error("Error saving document: ", error);
+            const permissionError = new FirestorePermissionError({
+                path: booksCollection.path,
+                operation: 'create',
+                requestResourceData: bookData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({
+                variant: "destructive",
+                title: "Save Failed",
+                description: "Could not save your book project. Check permissions and try again.",
+            });
+          });
+    });
+};
+
+
   const handleStartOver = () => {
     setView("form");
     setResults(null);
@@ -155,11 +216,17 @@ export default function BookGenerator() {
   if (view === "results") {
     return (
       <div className="mx-auto max-w-4xl">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <Button variant="ghost" onClick={handleStartOver}>
             <ArrowLeft className="mr-2" />
             Create Another
           </Button>
+          {user && (
+              <Button onClick={handleSaveBook} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="animate-spin" /> : <Save className="mr-2"/>}
+                  Start Writing Book
+              </Button>
+          )}
         </div>
         <h1 className="font-headline text-4xl font-bold text-primary mb-6">
           Your Book Outline
@@ -287,7 +354,7 @@ export default function BookGenerator() {
                             <FormControl>
                             <SelectTrigger className="p-6 text-base">
                                 <SelectValue placeholder="Select a mood" />
-                            </Trigger>
+                            </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                                 {moods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
@@ -345,3 +412,5 @@ export default function BookGenerator() {
     </div>
   );
 }
+
+    

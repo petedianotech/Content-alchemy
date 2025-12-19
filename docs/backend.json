@@ -118,6 +118,73 @@
                 "userId",
                 "niche"
             ]
+        },
+        "Book": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Book",
+            "type": "object",
+            "description": "Represents a book project, including its outline and generated content.",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "description": "The UID of the user who owns this book project."
+                },
+                "title": {
+                    "type": "string",
+                    "description": "The working title of the book."
+                },
+                "titles": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "An array of potential book titles suggested by the AI."
+                },
+                "idea": {
+                    "type": "string",
+                    "description": "The original idea or plot for the book."
+                },
+                "genre": {
+                    "type": "string"
+                },
+                "mood": {
+                    "type": "string"
+                },
+                "outline": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": { "type": "string" },
+                            "description": { "type": "string" }
+                        },
+                        "required": ["title", "description"]
+                    },
+                    "description": "The chapter-by-chapter outline of the book."
+                },
+                "chapters": {
+                    "type": "object",
+                    "description": "An object where keys are chapter titles and values are the generated chapter content.",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "creationDate": {
+                    "type": "object"
+                },
+                "lastModified": {
+                    "type": "object"
+                }
+            },
+            "required": [
+                "userId",
+                "title",
+                "titles",
+                "idea",
+                "genre",
+                "mood",
+                "outline",
+                "creationDate",
+                "lastModified"
+            ]
         }
     },
     "auth": {
@@ -132,7 +199,7 @@
                 "schema": {
                     "$ref": "#/entities/BlogPost"
                 },
-                "description": "Stores blog posts owned by a specific user. The userId in the path MUST match the authenticated user's UID, ensuring path-based security. This structure also supports secure `list` operations based on `userId`."
+                "description": "Stores blog posts owned by a specific user."
             },
             {
                 "path": "/users/{userId}/tweetSettings/default",
@@ -140,7 +207,16 @@
                     "$ref": "#/entities/TweetSettings"
                 },
                 "description": "Stores the default tweet generation settings for a specific user. Using a singleton document with the ID 'default' simplifies retrieval."
+            },
+            {
+                "path": "/users/{userId}/books/{bookId}",
+                "schema": {
+                    "$ref": "#/entities/Book"
+                },
+                "description": "Stores book projects owned by a specific user."
             }
         ]
     }
 }
+
+    
