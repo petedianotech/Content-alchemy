@@ -37,6 +37,12 @@ service cloud.firestore {
             allow read, write: if isOwner(userId);
         }
 
+        // FACEBOOK SETTINGS SUBCOLLECTION
+        // /users/{userId}/facebookSettings/default
+        match /facebookSettings/default {
+            allow read, write: if isOwner(userId);
+        }
+
         // BOOKS SUBCOLLECTION
         // /users/{userId}/books/{bookId}
         match /books/{bookId} {

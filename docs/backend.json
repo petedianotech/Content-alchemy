@@ -148,6 +148,35 @@
                 "niche"
             ]
         },
+        "FacebookSettings": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "FacebookSettings",
+            "type": "object",
+            "description": "Stores a user's settings and authorization for Facebook Page automation.",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "description": "The UID of the user who owns these settings."
+                },
+                "pageId": {
+                    "type": "string",
+                    "description": "The ID of the Facebook Page to post to."
+                },
+                "accessToken": {
+                    "type": "string",
+                    "description": "The long-lived Page Access Token."
+                },
+                "lastModified": {
+                    "type": "object",
+                    "description": "Server-side timestamp of when the settings were last modified."
+                }
+            },
+            "required": [
+                "userId",
+                "pageId",
+                "accessToken"
+            ]
+        },
         "Book": {
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "Book",
@@ -243,6 +272,13 @@
                     "$ref": "#/entities/TweetSettings"
                 },
                 "description": "Stores the default tweet generation settings for a specific user. Using a singleton document with the ID 'default' simplifies retrieval."
+            },
+            {
+                "path": "/users/{userId}/facebookSettings/default",
+                "schema": {
+                    "$ref": "#/entities/FacebookSettings"
+                },
+                "description": "Stores the Facebook automation settings for a specific user. Using a singleton document with the ID 'default' simplifies retrieval."
             },
             {
                 "path": "/users/{userId}/books/{bookId}",
