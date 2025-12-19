@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
@@ -45,7 +46,8 @@ export default function ChatPage() {
 
   const handleSendMessage = (values: z.infer<typeof formSchema>) => {
     const userMessage: Message = { role: 'user', content: [{ text: values.prompt }] };
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     form.reset();
 
     startGenerating(async () => {
