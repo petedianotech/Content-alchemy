@@ -17,31 +17,38 @@ service cloud.firestore {
     // This collection is not used yet, but rules are here as a placeholder for user profiles.
     match /users/{userId} {
       allow read, write: if isOwner(userId);
-    }
 
-    // BLOG POSTS SUBCOLLECTION
-    // /users/{userId}/blogPosts/{blogPostId}
-    match /users/{userId}/blogPosts/{blogPostId} {
-      // LIST: A user can list their own blog posts.
-      allow list: if isOwner(userId);
-      
-      // GET: A user can get one of their own blog posts.
-      allow get: if isOwner(userId);
-      
-      // CREATE: A user can create a new blog post if the data is valid.
-      // - The user must be the owner.
-      // - The incoming document's 'userId' field must match their own UID.
-      allow create: if isOwner(userId) 
-                    && request.resource.data.userId == userId;
-                    
-      // UPDATE: A user can update their own post if the ownership doesn't change.
-      // - The user must be the owner.
-      // - The 'userId' field cannot be changed.
-      allow update: if isOwner(userId) 
-                    && request.resource.data.userId == resource.data.userId;
-      
-      // DELETE: A user can delete their own post.
-      allow delete: if isOwner(userId);
+        // BLOG POSTS SUBCOLLECTION
+        // /users/{userId}/blogPosts/{blogPostId}
+        match /blogPosts/{blogPostId} {
+        // LIST: A user can list their own blog posts.
+        allow list: if isOwner(userId);
+        
+        // GET: A user can get one of their own blog posts.
+        allow get: if isOwner(userId);
+        
+        // CREATE: A user can create a new blog post if the data is valid.
+        // - The user must be the owner.
+        // - The incoming document's 'userId' field must match their own UID.
+        allow create: if isOwner(userId) 
+                        && request.resource.data.userId == userId;
+                        
+        // UPDATE: A user can update their own post if the ownership doesn't change.
+        // - The user must be the owner.
+        // - The 'userId' field cannot be changed.
+        allow update: if isOwner(userId) 
+                        && request.resource.data.userId == resource.data.userId;
+        
+        // DELETE: A user can delete their own post.
+        allow delete: if isOwner(userId);
+        }
+
+        // TWEET SETTINGS SUBCOLLECTION
+        // /users/{userId}/tweetSettings/default
+        match /tweetSettings/default {
+            // READ, WRITE: A user can read and write their own default tweet settings.
+            allow read, write: if isOwner(userId);
+        }
     }
   }
 }

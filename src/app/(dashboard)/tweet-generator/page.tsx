@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,10 +11,13 @@ import {
   Send,
   ClipboardCopy,
   RefreshCcw,
+  Save,
 } from "lucide-react";
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 import { generateTweet } from "@/ai/flows/generate-tweet";
 import { postTweet } from "@/ai/flows/post-tweet";
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -63,7 +66,11 @@ export default function TweetGenerator() {
   const [generatedTweet, setGeneratedTweet] = useState("");
   const [isGenerating, startGenerating] = useTransition();
   const [isPosting, startPosting] = useTransition();
+  const [isSaving, startSaving] = useTransition();
   const { toast } = useToast();
+  
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -75,6 +82,22 @@ export default function TweetGenerator() {
       keywords: "",
     },
   });
+
+  useEffect(() => {
+    async function loadSettings() {
+      if (user && firestore) {
+        const settingsDocRef = doc(firestore, 'users', user.uid, 'tweetSettings', 'default');
+        const docSnap = await getDoc(settingsDocRef);
+        if (docSnap.exists()) {
+          const settings = docSnap.data() as FormValues;
+          form.reset(settings); // Populate the form with saved settings
+        }
+      }
+    }
+    if (!isUserLoading) {
+        loadSettings();
+    }
+  }, [user, firestore, form, isUserLoading]);
 
   const handleGenerate = (values: FormValues) => {
     startGenerating(async () => {
@@ -124,12 +147,42 @@ export default function TweetGenerator() {
     });
   };
 
+  const handleSaveDefaults = (values: FormValues) => {
+    if (!user || !firestore) {
+      toast({ variant: "destructive", title: "You must be logged in to save settings." });
+      return;
+    }
+    startSaving(async () => {
+      const settingsDocRef = doc(firestore, 'users', user.uid, 'tweetSettings', 'default');
+      const settingsData = {
+        ...values,
+        userId: user.uid,
+        lastModified: serverTimestamp(),
+      };
+      
+      setDoc(settingsDocRef, settingsData, { merge: true })
+        .then(() => {
+            toast({ title: "Default settings saved!", description: "The scheduled tweet will now use these settings." });
+        })
+        .catch((error) => {
+            console.error("Error saving settings: ", error);
+             const permissionError = new FirestorePermissionError({
+                path: settingsDocRef.path,
+                operation: 'write',
+                requestResourceData: settingsData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: "destructive", title: "Save Failed", description: "Could not save your settings." });
+        });
+    });
+  };
+
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(generatedTweet);
     toast({
       title: "Copied to clipboard!",
     });
-  }
+  };
 
   return (
     <div className="flex flex-col items-center">
@@ -179,7 +232,7 @@ export default function TweetGenerator() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Writing Style</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a writing style" />
@@ -203,7 +256,7 @@ export default function TweetGenerator() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tweet Tone</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a tone" />
@@ -260,7 +313,7 @@ export default function TweetGenerator() {
                 />
 
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex-col gap-2 items-stretch">
                 <Button
                   type="submit"
                   size="lg"
@@ -273,6 +326,15 @@ export default function TweetGenerator() {
                     <Sparkles className="mr-2 h-5 w-5" />
                   )}
                   Generate Tweet
+                </Button>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={form. handleSubmit(handleSaveDefaults)}
+                    disabled={isSaving || !user}
+                >
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                    Save as Automation Default
                 </Button>
               </CardFooter>
             </form>

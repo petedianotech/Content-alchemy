@@ -74,6 +74,45 @@
                 "creationDate",
                 "lastModified"
             ]
+        },
+        "TweetSettings": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "TweetSettings",
+            "type": "object",
+            "description": "Stores a user's default settings for tweet generation.",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "description": "The UID of the user who owns these settings."
+                },
+                "topic": {
+                    "type": "string",
+                    "description": "The default niche or topic for tweets."
+                },
+                "style": {
+                    "type": "string",
+                    "description": "The default writing style (e.g., Professional, Friendly)."
+                },
+                "tone": {
+                    "type": "string",
+                    "description": "The default tone (e.g., Informative, Inspirational)."
+                },
+                "viral": {
+                    "type": "boolean",
+                    "description": "Whether to optimize for virality by default."
+                },
+                "keywords": {
+                    "type": "string",
+                    "description": "Default keywords or hashtags to include."
+                },
+                "lastModified": {
+                    "type": "object",
+                    "description": "Server-side timestamp of when the settings were last modified."
+                }
+            },
+            "required": [
+                "userId"
+            ]
         }
     },
     "auth": {
@@ -89,6 +128,13 @@
                     "$ref": "#/entities/BlogPost"
                 },
                 "description": "Stores blog posts owned by a specific user. The userId in the path MUST match the authenticated user's UID, ensuring path-based security. This structure also supports secure `list` operations based on `userId`."
+            },
+            {
+                "path": "/users/{userId}/tweetSettings/default",
+                "schema": {
+                    "$ref": "#/entities/TweetSettings"
+                },
+                "description": "Stores the default tweet generation settings for a specific user. Using a singleton document with the ID 'default' simplifies retrieval."
             }
         ]
     }
