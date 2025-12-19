@@ -15,9 +15,9 @@ export async function GET(request: Request) {
   try {
     const result = await scheduledBlogPostFlow();
     if (result.success) {
-      return NextResponse.json({ success: true, message: "Blog post generated successfully." });
+      return NextResponse.json({ success: true, message: result.message });
     } else {
-      return new NextResponse(result.error || 'Failed to generate blog post draft', { status: 500 });
+      return new NextResponse(result.message || 'Failed to process scheduled blog post', { status: 500 });
     }
   } catch (error: any) {
     return new NextResponse(error.message || 'An unexpected error occurred', { status: 500 });
