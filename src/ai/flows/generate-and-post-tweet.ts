@@ -10,21 +10,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {generateTweet} from './generate-tweet';
+import {generateTweet, type GenerateTweetInput} from './generate-tweet';
 import {postTweet} from './post-tweet';
 
-const GenerateAndPostTweetInputSchema = z.object({
-  topic: z.string().describe('The topic for the tweet to be generated.'),
-  requirements: z
-    .string()
-    .optional()
-    .describe(
-      'Specific requirements for the tweet (tone, keywords, etc.).'
-    ),
-});
-export type GenerateAndPostTweetInput = z.infer<
-  typeof GenerateAndPostTweetInputSchema
->;
 
 const GenerateAndPostTweetOutputSchema = z.object({
   success: z.boolean().describe('Whether the entire process was successful.'),
@@ -37,7 +25,7 @@ export type GenerateAndPostTweetOutput = z.infer<
 >;
 
 export async function generateAndPostTweet(
-  input: GenerateAndPostTweetInput
+  input: GenerateTweetInput
 ): Promise<GenerateAndPostTweetOutput> {
   return generateAndPostTweetFlow(input);
 }
@@ -45,7 +33,7 @@ export async function generateAndPostTweet(
 const generateAndPostTweetFlow = ai.defineFlow(
   {
     name: 'generateAndPostTweetFlow',
-    inputSchema: GenerateAndPostTweetInputSchema,
+    inputSchema: z.custom<GenerateTweetInput>(),
     outputSchema: GenerateAndPostTweetOutputSchema,
   },
   async input => {
