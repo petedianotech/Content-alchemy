@@ -1,16 +1,30 @@
 
 'use client';
 
+import { useState, useTransition, useMemo } from 'react';
 import { useMemoFirebase } from '@/firebase/provider';
 import Link from 'next/link';
-import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Loader2, Library, Frown, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+
 
 interface BlogPost {
+    id: string;
     title: string;
     content: string;
     topic: string;
@@ -23,6 +37,10 @@ interface BlogPost {
 export default function MyPostsPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const [isDeleting, startDeleting] = useTransition();
+    const [postToDelete, setPostToDelete] = useState<BlogPost | null>(null);
 
     const postsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -33,6 +51,37 @@ export default function MyPostsPage() {
     }, [user, firestore]);
 
     const { data: posts, isLoading, error } = useCollection<BlogPost>(postsQuery);
+
+    const handleDeletePost = async () => {
+        if (!user || !firestore || !postToDelete) return;
+
+        const docRef = doc(firestore, 'users', user.uid, 'blogPosts', postToDelete.id);
+
+        startDeleting(() => {
+            deleteDoc(docRef)
+            .then(() => {
+                toast({
+                    title: "Post Deleted",
+                    description: "Your post has been successfully removed.",
+                });
+                setPostToDelete(null);
+            })
+            .catch((error) => {
+                 const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'delete',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                toast({
+                    variant: "destructive",
+                    title: "Deletion Failed",
+                    description: "Could not delete the post. Please check your permissions.",
+                });
+                setPostToDelete(null);
+            });
+        });
+    };
+
 
     if (isUserLoading || (user && isLoading)) {
         return (
@@ -102,9 +151,11 @@ export default function MyPostsPage() {
                             <CardFooter className='flex justify-end gap-2'>
                                 <Button variant="ghost" size="icon" disabled>
                                     <Edit className="h-4 w-4" />
+                                    <span className="sr-only">Edit Post</span>
                                 </Button>
-                                <Button variant="ghost" size="icon" disabled>
-                                    <Trash2 className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" onClick={() => setPostToDelete(post)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                     <span className="sr-only">Delete Post</span>
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -120,6 +171,27 @@ export default function MyPostsPage() {
                     </Link>
                 </div>
             )}
+             <AlertDialog open={postToDelete !== null} onOpenChange={(isOpen) => !isOpen && setPostToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the
+                        blog post <span className="font-bold">&quot;{postToDelete?.title}&quot;</span>.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={handleDeletePost}
+                        disabled={isDeleting}
+                        className="bg-destructive hover:bg-destructive/90"
+                    >
+                        {isDeleting ? <Loader2 className="animate-spin" /> : "Delete"}
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
