@@ -38,11 +38,10 @@ const generateImageFlow = ai.defineFlow(
       prompt: input.prompt,
     });
     
-    const imageUrl = media.url;
-    if (!imageUrl) {
+    if (!media?.url) {
         throw new Error("Image generation failed to return a URL.");
     }
 
-    return { imageUrl };
+    return { imageUrl: media.url };
   }
 );
