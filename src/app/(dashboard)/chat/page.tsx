@@ -1,12 +1,10 @@
-
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from 'zod';
-import { MessageSquare, Bot, User, Send, Loader2, Sparkles, CornerDownLeft } from 'lucide-react';
-
+import { MessageSquare, Bot, User, Send, Loader2, CornerDownLeft } from 'lucide-react';
 import { generateChatResponse } from '@/ai/flows/generate-chat-response';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import PeteAiLogo from '@/components/icons/PeteAiLogo';
 
 const formSchema = z.object({
   prompt: z.string().min(1, 'Message cannot be empty.'),
@@ -22,6 +22,62 @@ const formSchema = z.object({
 interface Message {
   role: 'user' | 'model';
   content: { text: string }[];
+}
+
+// Custom hook for the typewriter effect
+function useTypewriter(text: string, speed = 30) {
+  const [displayText, setDisplayText] = useState('');
+
+  useEffect(() => {
+    let i = 0;
+    setDisplayText(''); // Reset on new text
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setDisplayText(prev => prev + text.charAt(i));
+        i++;
+      } else {
+        clearInterval(timer);
+      }
+    }, speed);
+
+    return () => clearInterval(timer);
+  }, [text, speed]);
+
+  return displayText;
+}
+
+
+const ChatMessage = ({ msg, user }: { msg: Message, user: any }) => {
+    const isModel = msg.role === 'model';
+    const displayText = useTypewriter(msg.content[0].text);
+
+    return (
+        <div className={cn('flex items-start gap-4', isModel ? 'justify-start' : 'justify-end')}>
+          {isModel && (
+            <Avatar className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+               <PeteAiLogo className="h-5 w-5" />
+            </Avatar>
+          )}
+          <div className={cn(
+                'max-w-2xl rounded-lg p-3 px-4 shadow-sm', 
+                isModel ? 'bg-card border' : 'bg-primary text-primary-foreground'
+            )}>
+            <p className="whitespace-pre-wrap leading-relaxed">
+              {isModel ? displayText : msg.content[0].text}
+            </p>
+          </div>
+          {!isModel && (
+            <Avatar className="flex h-8 w-8 shrink-0 items-center justify-center">
+               {user?.photoURL ? (
+                    <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
+                ) : null}
+                <AvatarFallback>
+                    <User className="h-5 w-5" />
+                </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
+    )
 }
 
 export default function ChatPage() {
@@ -46,13 +102,13 @@ export default function ChatPage() {
 
   const handleSendMessage = (values: z.infer<typeof formSchema>) => {
     const userMessage: Message = { role: 'user', content: [{ text: values.prompt }] };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages);
     form.reset();
 
     startGenerating(async () => {
       try {
-        const result = await generateChatResponse({ prompt: values.prompt, history: newMessages.slice(0, -1) });
+        const result = await generateChatResponse({ prompt: values.prompt, history: messages });
         const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
         setMessages(prev => [...prev, modelMessage]);
       } catch (error) {
@@ -82,7 +138,9 @@ export default function ChatPage() {
       <div ref={scrollAreaRef} className="flex-1 overflow-y-auto pr-4 space-y-6">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <Bot className="h-16 w-16 text-muted-foreground/50" />
+            <div className="rounded-full bg-primary/10 p-4">
+                <PeteAiLogo className="h-16 w-16 text-primary" />
+            </div>
             <h2 className="mt-4 text-xl font-semibold">Chat with PeteAi</h2>
             <p className="mt-1 text-muted-foreground">
               Start the conversation by typing your message below.
@@ -90,34 +148,16 @@ export default function ChatPage() {
           </div>
         ) : (
           messages.map((msg, index) => (
-            <div key={index} className={cn('flex items-start gap-4', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-              {msg.role === 'model' && (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <Bot className="h-5 w-5" />
-                </div>
-              )}
-              <div className={cn('max-w-2xl rounded-lg p-3', msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border')}>
-                <p className="whitespace-pre-wrap">{msg.content[0].text}</p>
-              </div>
-              {msg.role === 'user' && (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                   {user ? (
-                        <User className="h-5 w-5" />
-                    ) : (
-                        <User className="h-5 w-5" />
-                    )}
-                </div>
-              )}
-            </div>
+             <ChatMessage key={index} msg={msg} user={user} />
           ))
         )}
          {isGenerating && (
             <div className="flex items-start gap-4">
-               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <Bot className="h-5 w-5" />
-                </div>
-              <div className="max-w-md rounded-lg bg-card border p-3">
-                <Loader2 className="h-5 w-5 animate-spin" />
+               <Avatar className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <PeteAiLogo className="h-5 w-5" />
+                </Avatar>
+              <div className="max-w-md rounded-lg bg-card border p-3 shadow-sm">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>
             </div>
           )}
@@ -153,7 +193,7 @@ export default function ChatPage() {
               )}
             />
             <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                <p className="text-xs text-muted-foreground flex items-center">
+                <p className="text-xs text-muted-foreground hidden md:flex items-center">
                     <CornerDownLeft className="h-3 w-3 mr-1" />
                     Enter to send, Shift + Enter for new line
                 </p>
