@@ -15,7 +15,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 
-import AutomationIcon from '@/components/icons/AutomationIcon';
+import PeteAiLogo from '@/components/icons/PeteAiLogo';
 import LoginProfile from '@/components/auth/LoginProfile';
 import {
   SidebarProvider,
@@ -107,7 +107,7 @@ export function DashboardLayout({
       <Sidebar side="left" variant="inset" collapsible="icon">
         <SidebarHeader className="items-center justify-center p-4">
           <Link href="/" className='flex items-center gap-2'>
-            <AutomationIcon className="size-8 text-primary" />
+            <PeteAiLogo className="size-8 text-primary" />
             <span className="font-headline text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
               PeteAi
             </span>

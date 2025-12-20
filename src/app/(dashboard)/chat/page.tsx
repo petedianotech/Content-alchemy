@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import PeteAiLogo from '@/components/icons/PeteAiLogo';
 
 const formSchema = z.object({
   prompt: z.string().min(1, 'Message cannot be empty.'),
@@ -55,7 +54,7 @@ const ChatMessage = ({ msg, user }: { msg: Message, user: any }) => {
         <div className={cn('flex items-start gap-4', isModel ? 'justify-start' : 'justify-end')}>
           {isModel && (
             <Avatar className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-               <PeteAiLogo className="h-5 w-5" />
+               <Bot className="h-5 w-5" />
             </Avatar>
           )}
           <div className={cn(
@@ -108,7 +107,7 @@ export default function ChatPage() {
 
     startGenerating(async () => {
       try {
-        const result = await generateChatResponse({ prompt: values.prompt, history: messages });
+        const result = await generateChatResponse({ prompt: values.prompt, history: currentMessages });
         const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
         setMessages(prev => [...prev, modelMessage]);
       } catch (error) {
@@ -139,7 +138,7 @@ export default function ChatPage() {
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <div className="rounded-full bg-primary/10 p-4">
-                <PeteAiLogo className="h-16 w-16 text-primary" />
+                <Bot className="h-16 w-16 text-primary" />
             </div>
             <h2 className="mt-4 text-xl font-semibold">Chat with PeteAi</h2>
             <p className="mt-1 text-muted-foreground">
@@ -154,7 +153,7 @@ export default function ChatPage() {
          {isGenerating && (
             <div className="flex items-start gap-4">
                <Avatar className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <PeteAiLogo className="h-5 w-5" />
+                  <Bot className="h-5 w-5" />
                 </Avatar>
               <div className="max-w-md rounded-lg bg-card border p-3 shadow-sm">
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
