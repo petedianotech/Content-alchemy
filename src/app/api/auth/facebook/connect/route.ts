@@ -7,9 +7,10 @@ export async function GET(req: NextRequest) {
     throw new Error('FACEBOOK_APP_ID environment variable is not set.');
   }
 
-  // The base URL of your application.
-  // In production, this would be your actual domain.
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
+  // Dynamically construct the base URL from the request headers
+  const protocol = req.headers.get('x-forwarded-proto') || 'http';
+  const host = req.headers.get('host');
+  const baseUrl = `${protocol}://${host}`;
   
   // The URI to redirect to after the user grants/denies permission.
   // This MUST be one of the URIs you configured in your Facebook App's settings.
