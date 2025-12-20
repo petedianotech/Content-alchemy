@@ -30,16 +30,17 @@ function useTypewriter(text: string, speed = 30) {
   useEffect(() => {
     let i = 0;
     setDisplayText(''); // Reset on new text
-    const timer = setInterval(() => {
-      if (i < text.length) {
-        setDisplayText(prev => prev + text.charAt(i));
-        i++;
-      } else {
-        clearInterval(timer);
-      }
-    }, speed);
-
-    return () => clearInterval(timer);
+    if (text) {
+      const timer = setInterval(() => {
+        if (i < text.length) {
+          setDisplayText(prev => prev + text.charAt(i));
+          i++;
+        } else {
+          clearInterval(timer);
+        }
+      }, speed);
+      return () => clearInterval(timer);
+    }
   }, [text, speed]);
 
   return displayText;
@@ -101,13 +102,14 @@ export default function ChatPage() {
 
   const handleSendMessage = (values: z.infer<typeof formSchema>) => {
     const userMessage: Message = { role: 'user', content: [{ text: values.prompt }] };
-    const currentMessages = [...messages, userMessage];
-    setMessages(currentMessages);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     form.reset();
 
     startGenerating(async () => {
       try {
-        const result = await generateChatResponse({ prompt: values.prompt, history: currentMessages });
+        // Pass the *new* messages array directly to the AI flow
+        const result = await generateChatResponse({ prompt: values.prompt, history: newMessages });
         const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
         setMessages(prev => [...prev, modelMessage]);
       } catch (error) {
@@ -116,7 +118,7 @@ export default function ChatPage() {
           title: 'Oh no! Something went wrong.',
           description: 'There was a problem communicating with the AI. Please try again.',
         });
-        // Remove the user's message if the API call fails
+        // On error, remove the user's message that failed to get a response
         setMessages(prev => prev.slice(0, prev.length -1));
       }
     });
