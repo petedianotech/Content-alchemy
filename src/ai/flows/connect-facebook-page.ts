@@ -30,11 +30,8 @@ const connectFacebookPageFlow = ai.defineFlow(
       throw new Error('FACEBOOK_APP_ID environment variable is not set.');
     }
 
-    // IMPORTANT: This must be the exact URL you entered in your Facebook App's settings
-    // under "Valid OAuth Redirect URIs". We will need to get the real base URL from
-    // the production environment later. For now, we will use a placeholder that
-    // you must configure in your Facebook App.
-    const redirectUri = process.env.NEXT_PUBLIC_SITE_URL ? `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/facebook/callback` : 'http://localhost:9002/api/auth/facebook/callback';
+    // Use the hardcoded Vercel deployment URL for the redirect URI to ensure stability.
+    const redirectUri = `https://peteai.vercel.app/api/auth/facebook/callback`;
 
 
     // The permissions your app is requesting.
