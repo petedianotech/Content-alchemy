@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from 'next/link';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -188,13 +189,20 @@ export default function FacebookPostGenerator() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleGenerate)}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-3 font-headline text-2xl">
-                <Sparkles className="h-8 w-8" />
-                Create a Post
-              </CardTitle>
-              <CardDescription>
-                Tell our AI what you want to post about.
-              </CardDescription>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="flex items-center gap-3 font-headline text-2xl">
+                            <Sparkles className="h-8 w-8" />
+                            Create a Post
+                        </CardTitle>
+                        <CardDescription>
+                            Tell our AI what you want to post about.
+                        </CardDescription>
+                    </div>
+                    <Button asChild variant="outline">
+                        <Link href="/api/auth/facebook/connect">Connect to Facebook Page</Link>
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField
