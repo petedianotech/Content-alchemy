@@ -113,7 +113,7 @@ export default function BlogPostGenerator() {
       try {
         const result = await generateBlogPostDraft(values);
         const [title, ...contentParts] = result.draft.split("\n\n");
-        setDraft({ topic: values.topic, title, content: contentParts.join("\n\n") });
+        setDraft({ topic: values.topic, title: title.replace(/^#+\s*/, ''), content: contentParts.join("\n\n") });
         setView("editor");
         form.reset();
       } catch (error) {
@@ -359,7 +359,7 @@ const handleSaveDefaults = (values: FormValues) => {
               value={draft.content}
               onChange={(e) => setDraft({ ...draft, content: e.target.value })}
               placeholder="Your magical content appears here..."
-              className="h-[500px] flex-grow resize-none border-2 border-transparent bg-card p-4 text-lg leading-relaxed focus:border-primary"
+              className="h-[500px] flex-grow resize-none border-2 border-transparent bg-card p-4 text-lg leading-relaxed focus:border-primary whitespace-pre-wrap"
             />
             <Card>
               <CardHeader>
@@ -647,5 +647,3 @@ const handleSaveDefaults = (values: FormValues) => {
     </div>
   );
 }
-
-    
