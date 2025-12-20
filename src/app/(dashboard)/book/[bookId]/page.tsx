@@ -5,7 +5,8 @@ import { useState, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { BookOpen, Loader2, PanelLeft, ArrowLeft, Wand2, ClipboardCopy, FileText, ShoppingCart, Image as ImageIcon } from 'lucide-react';
+import { BookOpen, Loader2, PanelLeft, ArrowLeft, Wand2, ClipboardCopy, FileText, ShoppingCart, Image as ImageIcon, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 import { generateBookChapter } from '@/ai/flows/generate-book-chapter';
 import { generateBookMarketing, type GenerateBookMarketingOutput } from '@/ai/flows/generate-book-marketing';
@@ -163,6 +164,28 @@ export default function BookWriterPage() {
             .join('\n\n\n');
     }
 
+    const handleDownloadPdf = () => {
+        if (!book) return;
+        toast({ title: "Generating PDF...", description: "This might take a moment." });
+
+        const doc = new jsPDF();
+        const fullText = getFullBookText();
+        
+        // Set document properties
+        doc.setProperties({
+            title: book.title,
+        });
+
+        // Split text into lines that fit the page width
+        const splitText = doc.splitTextToSize(fullText, 180);
+
+        // Add the text to the document, jsPDF handles pagination
+        doc.text(splitText, 15, 20);
+        
+        // Save the PDF
+        doc.save(`${book.title.replace(/\s+/g, '_').toLowerCase()}.pdf`);
+    };
+
     if (isLoading) {
         return <div className="flex justify-center items-center h-full"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
     }
@@ -231,6 +254,9 @@ export default function BookWriterPage() {
                                 <OutlineSidebar/>
                             </SheetContent>
                         </Sheet>
+                        <Button onClick={handleDownloadPdf}>
+                           <FileDown className="mr-2"/> Download PDF
+                        </Button>
                         <Button onClick={() => copyToClipboard(getFullBookText(), 'Full book content')}>
                            <ClipboardCopy className="mr-2"/> Copy All
                         </Button>
