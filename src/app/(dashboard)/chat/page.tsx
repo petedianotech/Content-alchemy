@@ -52,7 +52,7 @@ export default function ChatPage() {
 
     startGenerating(async () => {
       try {
-        const result = await generateChatResponse({ prompt: values.prompt, history: messages });
+        const result = await generateChatResponse({ prompt: values.prompt, history: newMessages.slice(0, -1) });
         const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
         setMessages(prev => [...prev, modelMessage]);
       } catch (error) {
