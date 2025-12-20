@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   
   // The URI to redirect to after the user grants/denies permission.
   // This MUST be one of the URIs you configured in your Facebook App's settings.
-  const redirectUri = `${baseUrl}/api/auth/blogger/callback`;
+  const redirectUri = `${baseUrl}/api/auth/facebook/callback`;
 
   // The permissions your app is requesting.
   // 'pages_manage_posts' is required to publish content to a page.
