@@ -105,11 +105,15 @@ export default function ChatPage() {
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     form.reset();
-
+  
     startGenerating(async () => {
       try {
-        // Pass the *new* messages array directly to the AI flow
-        const result = await generateChatResponse({ prompt: values.prompt, history: newMessages });
+        const historyForAI = newMessages.map(msg => ({
+          role: msg.role,
+          content: msg.content.map(c => ({ text: c.text })),
+        }));
+  
+        const result = await generateChatResponse({ prompt: values.prompt, history: historyForAI });
         const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
         setMessages(prev => [...prev, modelMessage]);
       } catch (error) {
@@ -118,8 +122,7 @@ export default function ChatPage() {
           title: 'Oh no! Something went wrong.',
           description: 'There was a problem communicating with the AI. Please try again.',
         });
-        // On error, remove the user's message that failed to get a response
-        setMessages(prev => prev.slice(0, prev.length -1));
+        setMessages(prev => prev.slice(0, prev.length - 1));
       }
     });
   };
