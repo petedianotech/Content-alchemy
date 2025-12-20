@@ -5,7 +5,7 @@ import { useState, useTransition, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from 'zod';
-import { Bot, User, Send, Loader2, CornerDownLeft } from 'lucide-react';
+import { Bot, User, Send, Loader2, CornerDownLeft, MessageSquare } from 'lucide-react';
 import { generateChatResponse } from '@/ai/flows/generate-chat-response';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare } from 'lucide-react';
+
 
 const formSchema = z.object({
   prompt: z.string().min(1, 'Message cannot be empty.'),

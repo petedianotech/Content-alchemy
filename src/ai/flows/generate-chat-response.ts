@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview Generates a chat response based on a prompt and conversation history.
+ * @fileOverview Generates a chat response based on a prompt.
  *
  * - generateChatResponse - A function that generates a chat response.
  * - GenerateChatResponseInput - The input type for the generateChatResponse function.
@@ -11,19 +11,10 @@
 
 import {ai} from '@/ai/genkit';
 import {googleAI} from '@genkit-ai/google-genai';
-import {Message, z} from 'genkit';
+import {z} from 'genkit';
 
 const GenerateChatResponseInputSchema = z.object({
   prompt: z.string().describe("The user's message."),
-  history: z
-    .array(
-      z.object({
-        role: z.enum(['user', 'model']),
-        content: z.array(z.object({text: z.string()})),
-      })
-    )
-    .optional()
-    .describe('The conversation history.'),
 });
 export type GenerateChatResponseInput = z.infer<
   typeof GenerateChatResponseInputSchema
@@ -48,19 +39,12 @@ const generateChatResponseFlow = ai.defineFlow(
     inputSchema: GenerateChatResponseInputSchema,
     outputSchema: GenerateChatResponseOutputSchema,
   },
-  async ({prompt, history}) => {
-    const llmHistory = history ? history.map(msg => {
-      // The history from the client is in a slightly different format
-      // We need to map `content` to `parts`.
-      return new Message(msg.role, msg.content);
-    }) : [];
-
+  async ({prompt}) => {
     const {output} = await ai.generate({
       model: googleAI.model('gemini-2.5-flash'),
       system:
         'You are PeteAi, a friendly and helpful AI assistant. Your goal is to assist users with their content creation and automation needs. Be concise, knowledgeable, and always encouraging.',
       prompt: prompt,
-      history: llmHistory,
     });
     
     return {response: output?.text ?? ''};

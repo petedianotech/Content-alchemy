@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition } from "react";
@@ -59,7 +60,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import AlchemyIcon from "@/components/icons/AlchemyIcon";
 import QuillIcon from "@/components/icons/QuillIcon";
 import MagicWandIcon from "@/components/icons/MagicWandIcon";
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
@@ -310,9 +310,7 @@ const handleSaveDefaults = (values: FormValues) => {
   if (view === "loading") {
     return (
       <div className="flex h-[calc(100vh-10rem)] flex-col items-center justify-center gap-4 text-center">
-        <div className="animate-spin text-primary">
-          <AlchemyIcon className="h-24 w-24" />
-        </div>
+        <Loader2 className="h-24 w-24 animate-spin text-primary" />
         <h1 className="font-headline text-3xl text-primary">
           Brewing Your Content...
         </h1>
@@ -649,3 +647,5 @@ const handleSaveDefaults = (values: FormValues) => {
     </div>
   );
 }
+
+    
