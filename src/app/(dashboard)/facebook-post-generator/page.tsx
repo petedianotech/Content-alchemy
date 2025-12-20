@@ -15,7 +15,6 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 
 import { generateFacebookPost } from "@/ai/flows/generate-facebook-post";
-import { connectFacebookPage } from "@/ai/flows/connect-facebook-page";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -63,7 +62,6 @@ export default function FacebookPostGenerator() {
   const [post, setPost] = useState("");
 
   const [isGenerating, startGenerating] = useTransition();
-  const [isConnecting, startConnecting] = useTransition();
   const [isSavingDefaults, startSavingDefaults] = useTransition();
 
   const { toast } = useToast();
@@ -79,25 +77,6 @@ export default function FacebookPostGenerator() {
     },
   });
   
-  const handleConnect = () => {
-    startConnecting(async () => {
-        try {
-            const result = await connectFacebookPage();
-            if (result.authUrl) {
-                // Redirect the user to the Facebook consent screen
-                window.location.href = result.authUrl;
-            } else {
-                throw new Error("Could not retrieve authentication URL.");
-            }
-        } catch (error: any) {
-            toast({
-                variant: "destructive",
-                title: "Connection Failed",
-                description: error.message || "Could not connect to Facebook at this time.",
-            });
-        }
-    });
-  }
 
   const handleGenerate = (values: FormValues) => {
     setView("loading");
@@ -220,9 +199,10 @@ export default function FacebookPostGenerator() {
                             Tell our AI what you want to post about.
                         </CardDescription>
                     </div>
-                    <Button type="button" onClick={handleConnect} disabled={isConnecting} variant="outline">
-                        {isConnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                    <Button asChild variant="outline">
+                      <a href="/api/auth/facebook/connect">
                         Connect to Facebook Page
+                      </a>
                     </Button>
                 </div>
             </CardHeader>
