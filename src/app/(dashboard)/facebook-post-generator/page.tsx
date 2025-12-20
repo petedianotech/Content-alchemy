@@ -37,7 +37,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import AlchemyIcon from "@/components/icons/AlchemyIcon";
 import MagicWandIcon from "@/components/icons/MagicWandIcon";
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
 
@@ -137,7 +136,7 @@ export default function FacebookPostGenerator() {
     return (
       <div className="flex h-[calc(100vh-10rem)] flex-col items-center justify-center gap-4 text-center">
         <div className="animate-spin text-primary">
-          <AlchemyIcon className="h-24 w-24" />
+          <Loader2 className="h-24 w-24" />
         </div>
         <h1 className="font-headline text-3xl text-primary">
           Crafting Your Facebook Post...
