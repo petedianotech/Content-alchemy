@@ -55,7 +55,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { useToast } from "@/hooks/use-toast";
-import AlchemyIcon from "@/components/icons/AlchemyIcon";
 import MagicWandIcon from "@/components/icons/MagicWandIcon";
 import { Slider } from "@/components/ui/slider";
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
@@ -201,7 +200,7 @@ export default function BookGenerator() {
     return (
       <div className="flex h-[calc(100vh-10rem)] flex-col items-center justify-center gap-4 text-center">
         <div className="animate-spin text-primary">
-          <AlchemyIcon className="h-24 w-24" />
+          <Loader2 className="h-24 w-24" />
         </div>
         <h1 className="font-headline text-3xl text-primary">
           Writing Your Epic...
@@ -412,5 +411,3 @@ export default function BookGenerator() {
     </div>
   );
 }
-
-    
