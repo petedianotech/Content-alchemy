@@ -33,7 +33,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import AlchemyIcon from '@/components/icons/AlchemyIcon';
 import MagicWandIcon from '@/components/icons/MagicWandIcon';
 
 const formSchema = z.object({
@@ -159,7 +158,7 @@ export default function ImageGeneratorPage() {
           {isGenerating && (
             <div className="flex flex-col items-center justify-center gap-4 text-center">
               <div className="animate-spin text-primary">
-                <AlchemyIcon className="h-24 w-24" />
+                <Loader2 className="h-24 w-24" />
               </div>
               <h2 className="font-headline text-2xl text-primary">
                 Creating Your Vision...
