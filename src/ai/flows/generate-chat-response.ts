@@ -22,6 +22,7 @@ const GenerateChatResponseInputSchema = z.object({
         content: z.array(z.object({text: z.string()})),
       })
     )
+    .optional()
     .describe('The conversation history.'),
 });
 export type GenerateChatResponseInput = z.infer<
@@ -48,11 +49,11 @@ const generateChatResponseFlow = ai.defineFlow(
     outputSchema: GenerateChatResponseOutputSchema,
   },
   async ({prompt, history}) => {
-    const llmHistory = history.map(msg => {
+    const llmHistory = history ? history.map(msg => {
       // The history from the client is in a slightly different format
       // We need to map `content` to `parts`.
       return new Message(msg.role, msg.content);
-    });
+    }) : [];
 
     const {output} = await ai.generate({
       model: googleAI.model('gemini-2.5-flash'),

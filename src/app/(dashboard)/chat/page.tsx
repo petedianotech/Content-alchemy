@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from 'zod';
-import { MessageSquare, Bot, User, Send, Loader2, CornerDownLeft } from 'lucide-react';
+import { Bot, User, Send, Loader2, CornerDownLeft } from 'lucide-react';
 import { generateChatResponse } from '@/ai/flows/generate-chat-response';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MessageSquare } from 'lucide-react';
 
 const formSchema = z.object({
   prompt: z.string().min(1, 'Message cannot be empty.'),
@@ -66,7 +68,7 @@ const ChatMessage = ({ msg, user }: { msg: Message, user: any }) => {
               {isModel ? displayText : msg.content[0].text}
             </p>
           </div>
-          {!isModel && (
+          {!isModel && user && (
             <Avatar className="flex h-8 w-8 shrink-0 items-center justify-center">
                {user?.photoURL ? (
                     <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
@@ -102,18 +104,13 @@ export default function ChatPage() {
 
   const handleSendMessage = (values: z.infer<typeof formSchema>) => {
     const userMessage: Message = { role: 'user', content: [{ text: values.prompt }] };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, userMessage]);
     form.reset();
   
     startGenerating(async () => {
       try {
-        const historyForAI = newMessages.map(msg => ({
-          role: msg.role,
-          content: msg.content.map(c => ({ text: c.text })),
-        }));
-  
-        const result = await generateChatResponse({ prompt: values.prompt, history: historyForAI });
+        // We will no longer send history to simplify and fix the bug.
+        const result = await generateChatResponse({ prompt: values.prompt });
         const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
         setMessages(prev => [...prev, modelMessage]);
       } catch (error) {
@@ -122,7 +119,8 @@ export default function ChatPage() {
           title: 'Oh no! Something went wrong.',
           description: 'There was a problem communicating with the AI. Please try again.',
         });
-        setMessages(prev => prev.slice(0, prev.length - 1));
+        // Remove the user's message if the AI fails to respond
+        setMessages(prev => prev.filter(m => m !== userMessage));
       }
     });
   };
