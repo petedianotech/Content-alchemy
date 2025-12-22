@@ -2,16 +2,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { initializeApp, getApps } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
-
-// Ensure Firebase is initialized (important for server-side code)
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
-const firestore = getFirestore();
-const auth = getAuth();
+import { initAdmin } from '@/firebase/server-init';
+import { cookies } from 'next/headers';
+import { getAuth } from 'firebase-admin/auth';
 
 async function getLongLivedUserToken(shortLivedToken: string): Promise<string> {
     const url = new URL('https://graph.facebook.com/v20.0/oauth/access_token');
@@ -39,8 +32,6 @@ async function getPageAccessToken(longLivedUserToken: string): Promise<{ pageId:
         throw new Error(`Failed to get pages: ${data.error.message}`);
     }
 
-    // For simplicity, we use the first page found.
-    // A real app might let the user choose.
     const firstPage = data.data?.[0];
     if (!firstPage) {
         throw new Error('No Facebook pages found for this user.');
@@ -52,20 +43,28 @@ async function getPageAccessToken(longLivedUserToken: string): Promise<{ pageId:
     };
 }
 
-
 export async function GET(request: NextRequest) {
-  const { searchParams, host } = new URL(request.url);
+  const { searchParams, host, protocol } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
-  
-  // Later, we'd validate the 'state' parameter against a stored value for CSRF protection.
+  const siteUrl = `${protocol}//${host}`;
 
+  // Validate state for CSRF protection
+  const storedState = cookies().get('facebook_oauth_state')?.value;
+  if (!state || !storedState || state !== storedState) {
+    return NextResponse.redirect(`${siteUrl}/facebook-post-generator?error=${encodeURIComponent("Invalid state. CSRF detected.")}`);
+  }
+
+  // Clear the state cookie
+  cookies().delete('facebook_oauth_state');
+  
   if (!code) {
     return new NextResponse('Authorization code not found in request.', { status: 400 });
   }
 
   try {
-    const siteUrl = `https://${host}`;
+    const { app, firestore } = initAdmin();
+
     const redirectUri = `${siteUrl}/api/auth/facebook/callback`;
 
     // Step 1: Exchange code for a short-lived user access token
@@ -89,17 +88,20 @@ export async function GET(request: NextRequest) {
     // Step 3: Get a never-expiring Page Access Token
     const { pageId, pageAccessToken } = await getPageAccessToken(longLivedUserToken);
 
-    // This part assumes you have a way to get the current Firebase user's UID.
-    // In a real app, this might come from a session cookie or a token.
-    // For this example, we'll assume a placeholder user ID.
-    // IMPORTANT: In a real app, you MUST get the logged-in user's UID securely.
-    const userId = auth.currentUser?.uid; 
-    if (!userId) {
-        // Redirect to login or show an error if no user is logged in.
+    // Step 4: Securely get the user's UID from the session cookie
+    const sessionCookie = cookies().get('__session')?.value;
+    if (!sessionCookie) {
         return NextResponse.redirect(`${siteUrl}/facebook-post-generator?error=NotLoggedIn`);
     }
 
-    // Step 4: Save the Page ID and Page Access Token to Firestore
+    const decodedToken = await getAuth(app).verifySessionCookie(sessionCookie, true);
+    const userId = decodedToken.uid;
+    
+    if (!userId) {
+        return NextResponse.redirect(`${siteUrl}/facebook-post-generator?error=UserNotInSession`);
+    }
+
+    // Step 5: Save the Page ID and Page Access Token to Firestore
     const settingsDocRef = doc(firestore, 'users', userId, 'facebookSettings', 'default');
     await setDoc(settingsDocRef, {
         userId: userId,
@@ -108,14 +110,10 @@ export async function GET(request: NextRequest) {
         lastModified: serverTimestamp(),
     }, { merge: true });
 
-
-    // Redirect user back to the Facebook generator page with a success message
     return NextResponse.redirect(`${siteUrl}/facebook-post-generator?success=true`);
 
   } catch (error: any) {
     console.error('Facebook callback error:', error);
-    // Redirect with an error message
-    const siteUrl = `https://${host}`;
     return NextResponse.redirect(`${siteUrl}/facebook-post-generator?error=${encodeURIComponent(error.message)}`);
   }
 }

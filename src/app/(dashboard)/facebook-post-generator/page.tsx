@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useSearchParams } from 'next/navigation';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -66,7 +67,26 @@ export default function FacebookPostGenerator() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const searchParams = useSearchParams();
 
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+
+    if (success) {
+      toast({
+        title: "Connection Successful!",
+        description: "Your Facebook Page has been connected.",
+      });
+    } else if (error) {
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: decodeURIComponent(error),
+      });
+    }
+  }, [searchParams, toast]);
+  
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -102,12 +122,10 @@ export default function FacebookPostGenerator() {
       return;
     }
     startSavingDefaults(async () => {
-      // For now, this just shows a toast. Later, it will save FB settings.
        const settingsDocRef = doc(firestore, 'users', user.uid, 'facebookSettings', 'default');
        const settingsData = {
           userId: user.uid,
           lastModified: serverTimestamp(),
-          // We will add pageId and accessToken here later
         };
       
       setDoc(settingsDocRef, settingsData, { merge: true })
