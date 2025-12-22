@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,6 +14,7 @@ import {
   Youtube,
   Home,
   MessageSquare,
+  ShieldAlert,
 } from 'lucide-react';
 
 import PeteAiLogo from '@/components/icons/PeteAiLogo';
@@ -32,6 +34,7 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
 
 const menuItems = [
@@ -89,18 +92,35 @@ const menuItems = [
 ];
 
 
+const AccessDenied = () => (
+    <div className="flex h-[calc(100vh-8rem)] w-full flex-col items-center justify-center gap-4 text-center">
+        <ShieldAlert className="size-16 text-destructive" />
+        <h1 className="text-3xl font-bold">Access Denied</h1>
+        <p className="max-w-md text-muted-foreground">
+            This application is restricted to the owner only. You do not have permission to access this page.
+        </p>
+        <LoginProfile />
+    </div>
+);
+
+
 export function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+
+  const primaryUserUid = process.env.NEXT_PUBLIC_PRIMARY_USER_UID;
+  const isOwner = user && user.uid === primaryUserUid;
+  const isUnauthorizedUser = user && !isOwner && primaryUserUid !== 'YOUR_FIREBASE_UID_HERE';
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href) && href !== '/';
   };
+  
 
   return (
     <SidebarProvider>
@@ -145,7 +165,7 @@ export function DashboardLayout({
           {/* Header content can go here if needed */}
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
-          {children}
+           {isUnauthorizedUser ? <AccessDenied /> : children}
         </main>
       </SidebarInset>
     </SidebarProvider>
