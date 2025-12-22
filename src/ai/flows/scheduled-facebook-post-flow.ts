@@ -2,18 +2,50 @@
 
 /**
  * @fileOverview A flow for generating and posting a scheduled Facebook post.
- * This is a placeholder and will need to be implemented with Facebook API credentials.
  */
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { generateFacebookPost } from './generate-facebook-post';
+import { generateFacebookPost, type GenerateFacebookPostInput } from './generate-facebook-post';
+import { firebaseConfig } from '@/firebase/config';
+import { initializeApp, getApps } from 'firebase/app';
+
+// Ensure Firebase is initialized
+if (!getApps().length) {
+  initializeApp(firebaseConfig);
+}
+const firestore = getFirestore();
+
+// This is the user ID whose settings will be used for scheduled posts.
+const SCHEDULED_POST_USER_ID = process.env.PRIMARY_USER_UID;
 
 const ScheduledFacebookPostOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  post: z.string().optional(),
+  postId: z.string().optional(),
 });
 export type ScheduledFacebookPostOutput = z.infer<typeof ScheduledFacebookPostOutputSchema>;
+
+// Internal function to post to Facebook
+async function postToFacebookPage(pageId: string, accessToken: string, message: string): Promise<string> {
+    const url = `https://graph.facebook.com/${pageId}/feed`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            message: message,
+            access_token: accessToken,
+        }),
+    });
+    const data = await response.json();
+    if (data.error) {
+        throw new Error(`Facebook API error: ${data.error.message}`);
+    }
+    return data.id; // Returns the ID of the new post
+}
+
 
 export async function scheduledFacebookPostFlow(): Promise<ScheduledFacebookPostOutput> {
   return scheduledFacebookPostFlowInternal();
@@ -25,17 +57,53 @@ const scheduledFacebookPostFlowInternal = ai.defineFlow(
     outputSchema: ScheduledFacebookPostOutputSchema,
   },
   async () => {
-    // In a real implementation, you would:
-    // 1. Fetch user's Facebook settings (Page ID, Access Token) from Firestore.
-    // 2. Fetch user's default post generation settings (topic, requirements).
-    // 3. Generate the post content.
-    // 4. Use the Facebook Graph API to post the content to the specified page.
-    console.log('Running scheduled Facebook post flow (placeholder)...');
+    if (!SCHEDULED_POST_USER_ID) {
+      const errorMsg = 'PRIMARY_USER_UID environment variable is not set.';
+      console.error(errorMsg);
+      return { success: false, message: errorMsg };
+    }
 
-    // For now, we'll just log a message.
-    return {
-      success: true,
-      message: 'Scheduled Facebook post flow executed (placeholder). No post was made.',
-    };
+    try {
+        // 1. Fetch user's Facebook settings (Page ID, Access Token) from Firestore.
+        const fbSettingsRef = doc(firestore, 'users', SCHEDULED_POST_USER_ID, 'facebookSettings', 'default');
+        const fbSettingsSnap = await getDoc(fbSettingsRef);
+
+        if (!fbSettingsSnap.exists() || !fbSettingsSnap.data().accessToken) {
+            return { success: false, message: "Facebook settings or access token not found for user." };
+        }
+        const { pageId, accessToken } = fbSettingsSnap.data();
+
+
+        // 2. Fetch user's default post generation settings (topic, requirements).
+        const blogSettingsRef = doc(firestore, 'users', SCHEDULED_POST_USER_ID, 'blogSettings', 'default');
+        const blogSettingsSnap = await getDoc(blogSettingsRef);
+        
+        let postInput: GenerateFacebookPostInput = {
+            topic: "The amazing advancements in AI technology.",
+            requirements: "Write an engaging and optimistic post about the future of AI. Include the hashtag #AI."
+        };
+
+        if (blogSettingsSnap.exists()) {
+             const { topic, requirements } = blogSettingsSnap.data();
+             postInput = { topic, requirements };
+        }
+
+        // 3. Generate the post content.
+        const generatedPost = await generateFacebookPost(postInput);
+        if (!generatedPost.post) {
+            return { success: false, message: "Failed to generate Facebook post content." };
+        }
+
+        // 4. Use the Facebook Graph API to post the content to the specified page.
+        const postId = await postToFacebookPage(pageId, accessToken, generatedPost.post);
+
+        const successMsg = `Successfully posted to Facebook page ${pageId}. Post ID: ${postId}`;
+        console.log(successMsg);
+        return { success: true, message: successMsg, postId: postId };
+
+    } catch (error: any) {
+        console.error('Scheduled Facebook post flow failed:', error);
+        return { success: false, message: error.message };
+    }
   }
 );
