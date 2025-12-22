@@ -37,6 +37,14 @@ service cloud.firestore {
             allow read, write: if isOwner(userId);
         }
 
+        // TWEETS SUBCOLLECTION
+        // /users/{userId}/tweets/{tweetId}
+        match /tweets/{tweetId} {
+          allow list, get: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.userId == userId;
+          allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+        }
+
         // FACEBOOK SETTINGS SUBCOLLECTION
         // /users/{userId}/facebookSettings/default
         match /facebookSettings/default {
@@ -53,3 +61,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

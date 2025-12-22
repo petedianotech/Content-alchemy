@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -12,6 +13,9 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {generateTweet, type GenerateTweetInput} from './generate-tweet';
 import {postTweet} from './post-tweet';
+import { initAdmin } from '@/firebase/server-init';
+import { getAuth } from 'firebase-admin/auth';
+import { serverTimestamp } from 'firebase/firestore';
 
 
 const GenerateAndPostTweetOutputSchema = z.object({
@@ -36,7 +40,7 @@ const generateAndPostTweetFlow = ai.defineFlow(
     inputSchema: z.custom<GenerateTweetInput>(),
     outputSchema: GenerateAndPostTweetOutputSchema,
   },
-  async input => {
+  async (input, streamingCallback) => {
     // Step 1: Generate the tweet
     const generationResult = await generateTweet(input);
     if (!generationResult || !generationResult.tweet) {
@@ -47,15 +51,58 @@ const generateAndPostTweetFlow = ai.defineFlow(
       };
     }
 
+    const { firestore, app } = initAdmin();
+    // We need the user's UID to save the tweet record.
+    // This flow is used by the scheduled job, so we need a reliable way to get the UID.
+    // We will use the environment variable as the source of truth.
+    const userId = process.env.PRIMARY_USER_UID;
+
+    if (!userId) {
+        return {
+            success: false,
+            generatedTweet: generationResult.tweet,
+            error: 'PRIMARY_USER_UID environment variable is not set. Cannot save tweet record.',
+        };
+    }
+
+
     // Step 2: Post the generated tweet
     const postResult = await postTweet({tweet: generationResult.tweet});
-    if (!postResult.success) {
+    if (!postResult.success || !postResult.tweetId) {
       return {
         success: false,
         generatedTweet: generationResult.tweet,
         error: postResult.error || 'Failed to post the generated tweet.',
       };
     }
+
+    // Step 3: Save the tweet record to Firestore
+    try {
+        const tweetRecord = {
+            userId: userId,
+            tweetId: postResult.tweetId,
+            content: generationResult.tweet,
+            generationParams: input,
+            metrics: { impressions: 0, likes: 0, retweets: 0, replies: 0 },
+            creationDate: serverTimestamp(),
+            metricsLastUpdated: null,
+        };
+
+        await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('tweets')
+            .doc(postResult.tweetId)
+            .set(tweetRecord);
+        
+        console.log(`Successfully saved tweet record ${postResult.tweetId} to Firestore.`);
+
+    } catch(e: any) {
+        // Log the error, but don't fail the entire flow since the tweet was posted.
+        // The user gets their tweet, but we know there's a problem with our tracking.
+        console.error("Error saving tweet record to Firestore:", e);
+    }
+
 
     return {
       success: true,
@@ -64,3 +111,5 @@ const generateAndPostTweetFlow = ai.defineFlow(
     };
   }
 );
+
+    

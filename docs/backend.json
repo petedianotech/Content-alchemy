@@ -148,6 +148,53 @@
                 "niche"
             ]
         },
+        "Tweet": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Tweet",
+            "type": "object",
+            "description": "Represents a tweet that was generated and posted.",
+            "properties": {
+                "userId": {
+                    "type": "string"
+                },
+                "tweetId": {
+                    "type": "string",
+                    "description": "The ID of the tweet returned by the Twitter API."
+                },
+                "content": {
+                    "type": "string",
+                    "description": "The text content of the tweet."
+                },
+                "generationParams": {
+                    "type": "object",
+                    "properties": {
+                        "niche": {"type": "string"},
+                        "topic": {"type": "string"},
+                        "style": {"type": "string"},
+                        "tone": {"type": "string"},
+                        "viral": {"type": "boolean"},
+                        "keywords": {"type": "string"}
+                    }
+                },
+                "metrics": {
+                    "type": "object",
+                    "description": "Performance metrics fetched from the Twitter API.",
+                    "properties": {
+                        "impressions": {"type": "number"},
+                        "likes": {"type": "number"},
+                        "retweets": {"type": "number"},
+                        "replies": {"type": "number"}
+                    }
+                },
+                "creationDate": {
+                    "type": "object"
+                },
+                "metricsLastUpdated": {
+                    "type": "object"
+                }
+            },
+            "required": ["userId", "tweetId", "content", "generationParams", "creationDate"]
+        },
         "FacebookSettings": {
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "FacebookSettings",
@@ -274,6 +321,13 @@
                 "description": "Stores the default tweet generation settings for a specific user. Using a singleton document with the ID 'default' simplifies retrieval."
             },
             {
+                "path": "/users/{userId}/tweets/{tweetId}",
+                "schema": {
+                    "$ref": "#/entities/Tweet"
+                },
+                "description": "Stores a record of each tweet posted by the user."
+            },
+            {
                 "path": "/users/{userId}/facebookSettings/default",
                 "schema": {
                     "$ref": "#/entities/FacebookSettings"
@@ -290,3 +344,5 @@
         ]
     }
 }
+
+    
