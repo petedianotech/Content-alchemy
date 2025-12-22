@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookText, Facebook, Youtube, Image, BookOpen, Twitter, ArrowRight, MessageSquare } from "lucide-react";
+import { BookText, Facebook, Youtube, Image, BookOpen, Twitter, ArrowRight, MessageSquare, Copy } from "lucide-react";
 import {
   Card,
   CardDescription,
@@ -10,8 +10,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useUser } from "@/firebase";
+import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 export default function Home() {
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const handleCopy = () => {
+    if (user?.uid) {
+      navigator.clipboard.writeText(user.uid);
+      toast({
+        title: "Copied to clipboard!",
+        description: "Your Firebase User ID has been copied.",
+      });
+    }
+  };
+
 
   const features = [
       {
@@ -66,6 +83,17 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
+       {user && (
+        <Alert className="mb-8 bg-card">
+            <AlertTitle className="font-headline text-lg">Your Firebase User ID</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <code className="text-base font-semibold text-primary">{user.uid}</code>
+              <Button variant="ghost" size="icon" onClick={handleCopy}>
+                <Copy className="h-4 w-4" />
+              </Button>
+            </AlertDescription>
+        </Alert>
+      )}
       <div className="mb-12 text-center">
         <h1 className="font-headline text-4xl font-bold tracking-tight text-primary md:text-6xl">
           Welcome to PeteAi
