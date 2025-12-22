@@ -15,6 +15,7 @@ import {
   Home,
   MessageSquare,
   ShieldAlert,
+  BarChart2,
 } from 'lucide-react';
 
 import PeteAiLogo from '@/components/icons/PeteAiLogo';
@@ -82,6 +83,12 @@ const menuItems = [
     href: '/tweet-generator',
     label: 'Tweet Generator',
     icon: Twitter,
+  },
+    {
+    href: '/tweet-analytics',
+    label: 'Tweet Analytics',
+    icon: BarChart2,
+    authRequired: true,
   },
   {
     href: '/my-posts',
