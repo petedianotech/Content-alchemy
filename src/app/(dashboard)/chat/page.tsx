@@ -50,10 +50,10 @@ function useTypewriter(text: string, speed = 20) {
 }
 
 
-const ChatMessage = ({ msg, user }: { msg: Message, user: any }) => {
+const ChatMessage = ({ msg, user, isLastModelMessage }: { msg: Message, user: any, isLastModelMessage: boolean }) => {
     const isModel = msg.role === 'model';
     // The typewriter effect is only applied to the last model message
-    const displayText = useTypewriter(msg.content);
+    const displayText = isLastModelMessage ? useTypewriter(msg.content) : msg.content;
 
     return (
         <div className={cn('flex items-start gap-4', isModel ? 'justify-start' : 'justify-end')}>
@@ -102,7 +102,7 @@ export default function ChatPage() {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isGenerating]); // Also trigger on isGenerating to scroll for the thinking indicator
 
   const handleSendMessage = (values: z.infer<typeof formSchema>) => {
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: values.prompt };
@@ -121,7 +121,7 @@ export default function ChatPage() {
           description: 'There was a problem communicating with the AI. Please try again.',
         });
         // Remove the user's message if the AI fails to respond
-        setMessages(prev => prev.filter(m => m !== userMessage));
+        setMessages(prev => prev.filter(m => m.id !== userMessage.id));
       }
     });
   };
@@ -150,37 +150,14 @@ export default function ChatPage() {
             </p>
           </div>
         ) : (
-          messages.map((msg, index) => {
-             const isLastModelMessage = msg.role === 'model' && index === messages.length -1;
-             if (isLastModelMessage) {
-                return <ChatMessage key={msg.id} msg={msg} user={user} />;
-             }
-             return (
-                <div key={msg.id} className={cn('flex items-start gap-4', msg.role === 'model' ? 'justify-start' : 'justify-end')}>
-                    {msg.role === 'model' && (
-                        <Avatar className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                        <Bot className="h-5 w-5" />
-                        </Avatar>
-                    )}
-                    <div className={cn(
-                        'max-w-2xl rounded-lg p-3 px-4 shadow-sm', 
-                        msg.role === 'model' ? 'bg-card border' : 'bg-primary text-primary-foreground'
-                    )}>
-                        <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                    </div>
-                    {msg.role === 'user' && user && (
-                        <Avatar className="flex h-8 w-8 shrink-0 items-center justify-center">
-                        {user?.photoURL ? (
-                                <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
-                            ) : null}
-                            <AvatarFallback>
-                                <User className="h-5 w-5" />
-                            </AvatarFallback>
-                        </Avatar>
-                    )}
-                </div>
-             )
-          })
+          messages.map((msg, index) => (
+             <ChatMessage 
+                key={msg.id} 
+                msg={msg} 
+                user={user} 
+                isLastModelMessage={msg.role === 'model' && index === messages.length - 1} 
+              />
+          ))
         )}
          {isGenerating && (
             <div className="flex items-start gap-4">
