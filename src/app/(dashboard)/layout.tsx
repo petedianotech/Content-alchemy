@@ -5,7 +5,7 @@ import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { DashboardLayout as InnerDashboardLayout } from '@/components/layout/DashboardLayout';
-import { BrainCircuit } from 'lucide-react';
+import SplashScreen from '@/components/layout/SplashScreen';
 
 export default function DashboardLayout({
   children,
@@ -24,11 +24,7 @@ export default function DashboardLayout({
 
   // While checking for authentication, show a loading screen.
   if (isUserLoading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <BrainCircuit className="h-12 w-12 animate-pulse text-primary" />
-      </div>
-    );
+    return <SplashScreen />;
   }
 
   // If the user is authenticated, render the dashboard layout.

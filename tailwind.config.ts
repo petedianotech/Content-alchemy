@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -103,11 +104,47 @@ export default {
             transform: 'rotate(360deg)',
           },
         },
+        'rotate-zoom': {
+          '0%': { transform: 'scale(0.2) rotate(0deg)', opacity: '0' },
+          '50%': { transform: 'scale(1) rotate(180deg)', opacity: '1' },
+          '100%': { transform: 'scale(0.5) rotate(360deg)', opacity: '0' },
+        },
+        'splash-fade-out': {
+            '0%, 50%': { opacity: '0' },
+            '60%': { opacity: '1' },
+            '100%': { opacity: '0' },
+        },
+        'splash-facebook': {
+          '0%, 50%': { transform: 'translate(-50%, -50%) scale(0)' },
+          '80%': { transform: 'translate(-200%, -200%) scale(1.5)', opacity: '1' },
+          '100%': { transform: 'translate(-250%, -250%) scale(1.5)', opacity: '0' },
+        },
+        'splash-twitter': {
+          '0%, 50%': { transform: 'translate(-50%, -50%) scale(0)' },
+          '80%': { transform: 'translate(100%, -200%) scale(1.5)', opacity: '1' },
+          '100%': { transform: 'translate(150%, -250%) scale(1.5)', opacity: '0' },
+        },
+        'splash-youtube': {
+          '0%, 50%': { transform: 'translate(-50%, -50%) scale(0)' },
+          '80%': { transform: 'translate(-200%, 100%) scale(1.5)', opacity: '1' },
+          '100%': { transform: 'translate(-250%, 150%) scale(1.5)', opacity: '0' },
+        },
+        'splash-blogger': {
+          '0%, 50%': { transform: 'translate(-50%, -50%) scale(0)' },
+          '80%': { transform: 'translate(100%, 100%) scale(1.5)', opacity: '1' },
+          '100%': { transform: 'translate(150%, 150%) scale(1.5)', opacity: '0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'spin-slow': 'spin-slow 5s linear infinite',
+        'rotate-zoom': 'rotate-zoom 2.5s ease-in-out infinite',
+        'splash-fade-out': 'splash-fade-out 2.5s ease-in-out infinite',
+        'splash-facebook': 'splash-facebook 2.5s ease-in-out infinite',
+        'splash-twitter': 'splash-twitter 2.5s ease-in-out infinite',
+        'splash-youtube': 'splash-youtube 2.5s ease-in-out infinite',
+        'splash-blogger': 'splash-blogger 2.5s ease-in-out infinite',
       },
     },
   },

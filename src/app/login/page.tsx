@@ -7,6 +7,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { BrainCircuit, ShieldAlert } from 'lucide-react';
+import SplashScreen from '@/components/layout/SplashScreen';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -32,11 +33,7 @@ export default function LoginPage() {
   
   // While checking for user, you can show a loader or nothing
   if (isUserLoading) {
-     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <BrainCircuit className="h-12 w-12 animate-pulse text-primary" />
-      </div>
-    );
+     return <SplashScreen />;
   }
 
 
