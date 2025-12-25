@@ -51,21 +51,6 @@ const generateAndPostTweetFlow = ai.defineFlow(
       };
     }
 
-    const { firestore, app } = initAdmin();
-    // We need the user's UID to save the tweet record.
-    // This flow is used by the scheduled job, so we need a reliable way to get the UID.
-    // We will use the environment variable as the source of truth.
-    const userId = process.env.PRIMARY_USER_UID;
-
-    if (!userId) {
-        return {
-            success: false,
-            generatedTweet: generationResult.tweet,
-            error: 'PRIMARY_USER_UID environment variable is not set. Cannot save tweet record.',
-        };
-    }
-
-
     // Step 2: Post the generated tweet
     const postResult = await postTweet({tweet: generationResult.tweet});
     if (!postResult.success || !postResult.tweetId) {
@@ -76,26 +61,32 @@ const generateAndPostTweetFlow = ai.defineFlow(
       };
     }
 
-    // Step 3: Save the tweet record to Firestore
+    // Step 3: Save the tweet record to Firestore (only if a user ID is available)
     try {
-        const tweetRecord = {
-            userId: userId,
-            tweetId: postResult.tweetId,
-            content: generationResult.tweet,
-            generationParams: input,
-            metrics: { impressions: 0, likes: 0, retweets: 0, replies: 0 },
-            creationDate: serverTimestamp(),
-            metricsLastUpdated: null,
-        };
+        const userId = process.env.PRIMARY_USER_UID;
+        if (!userId || userId === 'YOUR_FIREBASE_UID_HERE') {
+            console.log("PRIMARY_USER_UID not set. Skipping save tweet to Firestore.");
+        } else {
+            const { firestore } = initAdmin();
+            const tweetRecord = {
+                userId: userId,
+                tweetId: postResult.tweetId,
+                content: generationResult.tweet,
+                generationParams: input,
+                metrics: { impressions: 0, likes: 0, retweets: 0, replies: 0 },
+                creationDate: serverTimestamp(),
+                metricsLastUpdated: null,
+            };
 
-        await firestore
-            .collection('users')
-            .doc(userId)
-            .collection('tweets')
-            .doc(postResult.tweetId)
-            .set(tweetRecord);
-        
-        console.log(`Successfully saved tweet record ${postResult.tweetId} to Firestore.`);
+            await firestore
+                .collection('users')
+                .doc(userId)
+                .collection('tweets')
+                .doc(postResult.tweetId)
+                .set(tweetRecord);
+            
+            console.log(`Successfully saved tweet record ${postResult.tweetId} to Firestore.`);
+        }
 
     } catch(e: any) {
         // Log the error, but don't fail the entire flow since the tweet was posted.
