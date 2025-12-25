@@ -15,6 +15,8 @@ import {
   BarChart2,
   Library,
   ChevronRight,
+  Bot,
+  BrainCircuit
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import {
@@ -23,6 +25,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { useRef } from 'react';
+
 
 const featureGroups = [
   {
@@ -135,21 +140,39 @@ const FeatureLink = ({
 
 export default function Home() {
   const { user } = useUser();
+  const toolsRef = useRef<HTMLDivElement>(null);
+  
+  const handleScrollToTools = () => {
+    toolsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-8">
-        <h1 className="font-headline text-4xl font-bold tracking-tight text-primary md:text-5xl">
-          Welcome back,{' '}
-          {user?.displayName ? user.displayName.split(' ')[0] : 'Creator'}!
-        </h1>
-        <p className="mt-2 max-w-2xl text-lg text-muted-foreground">
-          Your AI-powered control center for content creation. What will you
-          create today?
-        </p>
+       <div className="relative mb-8 flex min-h-[250px] flex-col items-center justify-center overflow-hidden rounded-xl bg-card p-8 text-center shadow-sm">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(40%_120%_at_50%_100%,hsl(var(--primary)/0.15),transparent)]"
+        />
+        <div className="animate-in fade-in-0 slide-in-from-top-12 duration-500">
+           <div className="relative mx-auto flex size-24 items-center justify-center rounded-full bg-gradient-to-tr from-primary/20 via-primary/5 to-primary/20">
+            <div className="absolute inset-0.5 animate-spin-slow rounded-full bg-gradient-to-r from-primary via-primary/20 to-primary" />
+            <BrainCircuit className="relative z-10 size-12 text-primary" />
+           </div>
+           <h1 className="mt-6 font-headline text-4xl font-bold tracking-tight text-primary md:text-5xl">
+            Welcome,{' '}
+            {user?.displayName ? user.displayName.split(' ')[0] : 'Creator'}!
+           </h1>
+           <p className="mt-2 max-w-2xl text-lg text-muted-foreground">
+             Your AI control center is ready. What will you create today?
+           </p>
+           <Button onClick={handleScrollToTools} className="mt-6" size="lg">
+                Start Creating
+           </Button>
+        </div>
       </div>
 
-      <div className="flex-grow">
+      <div ref={toolsRef} className="flex-grow">
         <Accordion
           type="multiple"
           defaultValue={featureGroups.map(g => g.title)}
