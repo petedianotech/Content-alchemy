@@ -1,50 +1,56 @@
+rules_version = '2';
 
-'use server';
+service cloud.firestore {
+  match /databases/{database}/documents {
 
-/**
- * @fileOverview A flow for generating a scheduled blog post.
- */
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-import { generateBlogPostDraft, type GenerateBlogPostDraftInput } from './generate-blog-post-draft';
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-const ScheduledBlogPostOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  draft: z.string().optional(),
-});
-export type ScheduledBlogPostOutput = z.infer<typeof ScheduledBlogPostOutputSchema>;
-
-
-export async function scheduledBlogPostFlow(): Promise<ScheduledBlogPostOutput> {
-  return scheduledBlogPostFlowInternal();
-}
-
-const scheduledBlogPostFlowInternal = ai.defineFlow(
-  {
-    name: 'scheduledBlogPostFlow',
-    outputSchema: ScheduledBlogPostOutputSchema,
-  },
-  async () => {
-    // Define a fallback input. This will be used for the scheduled blog post.
-    // The automation will no longer fetch settings from Firestore to avoid build issues.
-    const input: GenerateBlogPostDraftInput = {
-      topic: 'The impact of AI on modern software development.',
-      requirements: 'Write in a professional, informative tone. Target audience is software developers.',
-    };
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
     
-    console.log('Running scheduled blog post flow with static input:', input);
-    try {
-        const result = await generateBlogPostDraft(input);
-        const successMsg = `Blog post draft generated successfully for topic: ${input.topic}`;
-        console.log(successMsg);
-        // The generated draft is available in result.draft
-        // You could save it to Firestore, or integrate another service here in the future.
-        return { success: true, message: successMsg, draft: result.draft };
+    // USERS COLLECTION
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
 
-    } catch (error: any) {
-        console.error('Failed to generate blog draft:', error);
-        return { success: false, message: error.message };
+        // BLOG POSTS SUBCOLLECTION
+        // /users/{userId}/blogPosts/{blogPostId}
+        match /blogPosts/{blogPostId} {
+          allow list, get, delete: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.userId == userId;
+          allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+        }
+
+        // TWEET SETTINGS SUBCOLLECTION
+        // /users/{userId}/tweetSettings/default
+        match /tweetSettings/default {
+            allow read, write: if isOwner(userId);
+        }
+
+        // TWEETS SUBCOLLECTION
+        // /users/{userId}/tweets/{tweetId}
+        match /tweets/{tweetId} {
+          allow list, get: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.userId == userId;
+          allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+        }
+
+        // FACEBOOK SETTINGS SUBCOLLECTION
+        // /users/{userId}/facebookSettings/default
+        match /facebookSettings/default {
+            allow read, write: if isOwner(userId);
+        }
+
+        // BOOKS SUBCOLLECTION
+        // /users/{userId}/books/{bookId}
+        match /books/{bookId} {
+            allow list, get, delete: if isOwner(userId);
+            allow create: if isOwner(userId) && request.resource.data.userId == userId;
+            allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+        }
     }
   }
-);
+}

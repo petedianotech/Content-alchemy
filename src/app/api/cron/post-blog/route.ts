@@ -1,25 +1,56 @@
+rules_version = '2';
 
-import { NextResponse } from 'next/server';
-import { scheduledBlogPostFlow } from '@/ai/flows/scheduled-blog-post-flow';
+service cloud.firestore {
+  match /databases/{database}/documents {
 
-export const dynamic = 'force-dynamic';
-
-export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new NextResponse('Unauthorized', {
-      status: 401,
-    });
-  }
-
-  try {
-    const result = await scheduledBlogPostFlow();
-    if (result.success) {
-      return NextResponse.json({ success: true, message: result.message });
-    } else {
-      return new NextResponse(result.message || 'Failed to process scheduled blog post', { status: 500 });
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
     }
-  } catch (error: any) {
-    return new NextResponse(error.message || 'An unexpected error occurred', { status: 500 });
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // USERS COLLECTION
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+        // BLOG POSTS SUBCOLLECTION
+        // /users/{userId}/blogPosts/{blogPostId}
+        match /blogPosts/{blogPostId} {
+          allow list, get, delete: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.userId == userId;
+          allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+        }
+
+        // TWEET SETTINGS SUBCOLLECTION
+        // /users/{userId}/tweetSettings/default
+        match /tweetSettings/default {
+            allow read, write: if isOwner(userId);
+        }
+
+        // TWEETS SUBCOLLECTION
+        // /users/{userId}/tweets/{tweetId}
+        match /tweets/{tweetId} {
+          allow list, get: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.userId == userId;
+          allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+        }
+
+        // FACEBOOK SETTINGS SUBCOLLECTION
+        // /users/{userId}/facebookSettings/default
+        match /facebookSettings/default {
+            allow read, write: if isOwner(userId);
+        }
+
+        // BOOKS SUBCOLLECTION
+        // /users/{userId}/books/{bookId}
+        match /books/{bookId} {
+            allow list, get, delete: if isOwner(userId);
+            allow create: if isOwner(userId) && request.resource.data.userId == userId;
+            allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+        }
+    }
   }
 }

@@ -25,12 +25,6 @@ service cloud.firestore {
           allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
         }
 
-        // BLOG SETTINGS SUBCOLLECTION
-        // /users/{userId}/blogSettings/default
-        match /blogSettings/default {
-            allow read, write: if isOwner(userId);
-        }
-
         // TWEET SETTINGS SUBCOLLECTION
         // /users/{userId}/tweetSettings/default
         match /tweetSettings/default {
@@ -61,5 +55,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

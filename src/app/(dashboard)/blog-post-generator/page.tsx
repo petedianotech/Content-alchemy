@@ -24,8 +24,6 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  doc,
-  setDoc
 } from 'firebase/firestore';
 
 
@@ -92,7 +90,6 @@ export default function BlogPostGenerator() {
 
   const [isGenerating, startGenerating] = useTransition();
   const [isSaving, startSaving] = useTransition();
-  const [isSavingDefaults, startSavingDefaults] = useTransition();
   const [isSuggesting, startSuggesting] = useTransition();
   const [isChecking, startChecking] = useTransition();
   const [isGeneratingFacebook, startGeneratingFacebook] = useTransition();
@@ -172,36 +169,6 @@ export default function BlogPostGenerator() {
           });
     });
 };
-
-const handleSaveDefaults = (values: FormValues) => {
-    if (!user || !firestore) {
-      toast({ variant: "destructive", title: "You must be logged in to save settings." });
-      return;
-    }
-    startSavingDefaults(async () => {
-      const settingsDocRef = doc(firestore, 'users', user.uid, 'blogSettings', 'default');
-      const settingsData = {
-        ...values,
-        userId: user.uid,
-        lastModified: serverTimestamp(),
-      };
-      
-      setDoc(settingsDocRef, settingsData, { merge: true })
-        .then(() => {
-            toast({ title: "Default settings saved!", description: "The scheduled blog posts will now use these settings." });
-        })
-        .catch((error) => {
-            console.error("Error saving settings: ", error);
-             const permissionError = new FirestorePermissionError({
-                path: settingsDocRef.path,
-                operation: 'write',
-                requestResourceData: settingsData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: "destructive", title: "Save Failed", description: "Could not save your settings." });
-        });
-    });
-  };
 
   const handleGetSuggestions = () => {
     startSuggesting(async () => {
@@ -631,15 +598,6 @@ const handleSaveDefaults = (values: FormValues) => {
                 )}
                 Generate Post
               </Button>
-               <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={form.handleSubmit(handleSaveDefaults)}
-                    disabled={isSavingDefaults || !user}
-                >
-                    {isSavingDefaults ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                    Save as Automation Default
-                </Button>
             </CardFooter>
           </form>
         </Form>
