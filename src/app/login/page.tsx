@@ -1,9 +1,10 @@
+
 'use client';
 
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit } from 'lucide-react';
+import { BrainCircuit, ShieldAlert } from 'lucide-react';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -35,6 +36,17 @@ export default function LoginPage() {
             Sign in to access your AI-powered content creation suite.
           </p>
         </div>
+
+        <div className="mx-auto max-w-sm rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+            <div className="flex items-center gap-3">
+                 <ShieldAlert className="h-6 w-6" />
+                <h3 className="font-semibold">Admin Access Only</h3>
+            </div>
+            <p className="mt-2 text-sm text-destructive/80">
+                This application is restricted to authorized administrators. Unauthorized access attempts will be denied.
+            </p>
+        </div>
+
         <Button 
           size="lg" 
           onClick={handleGoogleSignIn}
