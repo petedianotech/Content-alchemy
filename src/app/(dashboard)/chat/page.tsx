@@ -155,11 +155,11 @@ export default function ChatPage() {
                 key={msg.id} 
                 msg={msg} 
                 user={user} 
-                isLastModelMessage={msg.role === 'model' && index === messages.length - 1} 
+                isLastModelMessage={msg.role === 'model' && index === messages.length - 1 && isGenerating} 
               />
           ))
         )}
-         {isGenerating && (
+         {isGenerating && messages[messages.length-1]?.role === 'user' && (
             <div className="flex items-start gap-4">
                <Avatar className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                   <Bot className="h-5 w-5" />
