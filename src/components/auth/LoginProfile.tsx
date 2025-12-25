@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -5,12 +6,14 @@ import {
   signInWithPopup,
   signOut,
 } from 'firebase/auth';
+import Image from 'next/image';
 import { useAuth, useUser } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import { LogIn, LogOut, User as UserIcon } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 import { useSidebar } from '../ui/sidebar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function LoginProfile() {
   const { user, isUserLoading } = useUser();
@@ -52,18 +55,18 @@ export default function LoginProfile() {
 
   if (state === 'collapsed') {
      return (
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <UserIcon />
-        </Button>
+        <Avatar className="h-8 w-8">
+            <Image src="/profile.png" alt="User Profile" width={32} height={32} className="rounded-full" />
+        </Avatar>
      )
   }
 
   return (
     <div className='flex w-full flex-col gap-2 rounded-lg bg-sidebar-accent p-2 text-sidebar-accent-foreground'>
        <div className="flex items-center gap-2">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <UserIcon className="size-5" />
-            </div>
+            <Avatar className="h-8 w-8">
+               <Image src="/profile.png" alt="User Profile" width={32} height={32} className="rounded-full" />
+            </Avatar>
             <div className='flex flex-col truncate'>
                 <p className="truncate text-sm font-medium leading-none">
                 {user.displayName}
