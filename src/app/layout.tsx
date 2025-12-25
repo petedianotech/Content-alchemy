@@ -3,7 +3,6 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Analytics } from "@vercel/analytics/react"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 
 export const metadata: Metadata = {
@@ -37,9 +36,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <DashboardLayout>
-            {children}
-          </DashboardLayout>
+          {children}
         </FirebaseClientProvider>
         <Toaster />
         <Analytics />

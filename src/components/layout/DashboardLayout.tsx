@@ -134,7 +134,7 @@ export function DashboardLayout({
   const primaryUserUid = process.env.NEXT_PUBLIC_PRIMARY_USER_UID;
   const isOwner = user && user.uid === primaryUserUid;
   const isUnauthorizedUser =
-    user && !isOwner && primaryUserUid !== 'YOUR_FIREBASE_UID_HERE';
+    user && !isOwner && primaryUserUid && primaryUserUid !== 'YOUR_FIREBASE_UID_HERE';
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
