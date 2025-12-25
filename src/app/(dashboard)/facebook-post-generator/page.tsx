@@ -11,9 +11,7 @@ import {
   Loader2,
   ArrowLeft,
   Sparkles,
-  Save,
 } from "lucide-react";
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 
 import { generateFacebookPost } from "@/ai/flows/generate-facebook-post";
@@ -40,7 +38,6 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import MagicWandIcon from "@/components/icons/MagicWandIcon";
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from "@/firebase";
 
 
 const formSchema = z.object({
@@ -63,11 +60,8 @@ export default function FacebookPostGenerator() {
   const [post, setPost] = useState("");
 
   const [isGenerating, startGenerating] = useTransition();
-  const [isSavingDefaults, startSavingDefaults] = useTransition();
 
   const { toast } = useToast();
-  const { user } = useUser();
-  const firestore = useFirestore();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -77,7 +71,7 @@ export default function FacebookPostGenerator() {
     if (success) {
       toast({
         title: "Connection Successful!",
-        description: "Your Facebook Page has been connected.",
+        description: "Your Facebook Page has been connected for future use.",
       });
     } else if (error) {
       toast({
@@ -114,35 +108,6 @@ export default function FacebookPostGenerator() {
         });
         setView("form");
       }
-    });
-  };
-
-  const handleSaveDefaults = () => {
-    if (!user || !firestore) {
-      toast({ variant: "destructive", title: "You must be logged in to save settings." });
-      return;
-    }
-    startSavingDefaults(async () => {
-       const settingsDocRef = doc(firestore, 'users', user.uid, 'facebookSettings', 'default');
-       const settingsData = {
-          userId: user.uid,
-          lastModified: serverTimestamp(),
-        };
-      
-      setDoc(settingsDocRef, settingsData, { merge: true })
-        .then(() => {
-            toast({ title: "Automation settings saved!", description: "Connect your Facebook account in the next step." });
-        })
-        .catch((error) => {
-            console.error("Error saving settings: ", error);
-             const permissionError = new FirestorePermissionError({
-                path: settingsDocRef.path,
-                operation: 'write',
-                requestResourceData: settingsData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: "destructive", title: "Save Failed", description: "Could not save your settings." });
-        });
     });
   };
 
@@ -283,15 +248,6 @@ export default function FacebookPostGenerator() {
                 )}
                 Generate Post
               </Button>
-              <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleSaveDefaults}
-                    disabled={isSavingDefaults || !user}
-                >
-                    {isSavingDefaults ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                    Save as Automation Default
-                </Button>
             </CardFooter>
           </form>
         </Form>
