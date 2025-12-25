@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -30,16 +31,16 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarTrigger,
-  SidebarInset,
-  SidebarGroup,
-  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 const mainNav = [
   {
@@ -110,18 +111,17 @@ const projectsNav = [
   },
 ];
 
-
 const AccessDenied = () => (
-    <div className="flex h-[calc(100vh-8rem)] w-full flex-col items-center justify-center gap-4 text-center">
-        <ShieldAlert className="size-16 text-destructive" />
-        <h1 className="text-3xl font-bold">Access Denied</h1>
-        <p className="max-w-md text-muted-foreground">
-            This application is restricted to the owner only. You do not have permission to access this page.
-        </p>
-        <LoginProfile />
-    </div>
+  <div className="flex h-[calc(100vh-8rem)] w-full flex-col items-center justify-center gap-4 text-center">
+    <ShieldAlert className="size-16 text-destructive" />
+    <h1 className="text-3xl font-bold">Access Denied</h1>
+    <p className="max-w-md text-muted-foreground">
+      This application is restricted to the owner only. You do not have
+      permission to access this page.
+    </p>
+    <LoginProfile />
+  </div>
 );
-
 
 export function DashboardLayout({
   children,
@@ -133,16 +133,17 @@ export function DashboardLayout({
 
   const primaryUserUid = process.env.NEXT_PUBLIC_PRIMARY_USER_UID;
   const isOwner = user && user.uid === primaryUserUid;
-  const isUnauthorizedUser = user && !isOwner && primaryUserUid !== 'YOUR_FIREBASE_UID_HERE';
+  const isUnauthorizedUser =
+    user && !isOwner && primaryUserUid !== 'YOUR_FIREBASE_UID_HERE';
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href) && href !== '/';
   };
-  
+
   const renderNavItems = (items: typeof mainNav) => {
-    return items.map((item) =>
-      (item.authRequired && !user) ? null : (
+    return items.map(item =>
+      item.authRequired && !user ? null : (
         <SidebarMenuItem key={item.href}>
           <SidebarMenuButton
             asChild
@@ -161,12 +162,17 @@ export function DashboardLayout({
     );
   };
 
+  const navGroups = [
+    { title: 'Content Creation', items: contentCreationNav },
+    { title: 'Social & Automation', items: socialNav },
+    { title: 'Projects', items: projectsNav },
+  ];
 
   return (
     <SidebarProvider>
       <Sidebar side="left" variant="inset" collapsible="icon">
         <SidebarHeader className="items-center justify-center p-4">
-          <Link href="/" className='flex items-center gap-2'>
+          <Link href="/" className="flex items-center gap-2">
             <PeteAiLogo className="size-8 text-primary" />
             <span className="font-headline text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
               PeteAi
@@ -174,36 +180,50 @@ export function DashboardLayout({
           </Link>
         </SidebarHeader>
         <SidebarContent className="p-2">
-            <SidebarMenu>
-               {renderNavItems(mainNav)}
-            </SidebarMenu>
-            <SidebarGroup>
-                <SidebarGroupLabel>Content Creation</SidebarGroupLabel>
-                <SidebarMenu>{renderNavItems(contentCreationNav)}</SidebarMenu>
-            </SidebarGroup>
-            <SidebarGroup>
-                <SidebarGroupLabel>Social & Automation</SidebarGroupLabel>
-                <SidebarMenu>{renderNavItems(socialNav)}</SidebarMenu>
-            </SidebarGroup>
-             <SidebarGroup>
-                <SidebarGroupLabel>Projects</SidebarGroupLabel>
-                <SidebarMenu>{renderNavItems(projectsNav)}</SidebarMenu>
-            </SidebarGroup>
-
+          <SidebarMenu>{renderNavItems(mainNav)}</SidebarMenu>
+          <Accordion
+            type="multiple"
+            defaultValue={navGroups.map(g => g.title)}
+            className="w-full space-y-1 group-data-[collapsible=icon]:hidden"
+          >
+            {navGroups.map(group => (
+              <AccordionItem
+                key={group.title}
+                value={group.title}
+                className="rounded-md border-none bg-sidebar-accent/50 px-2"
+              >
+                <AccordionTrigger className="py-2 text-sm font-medium hover:no-underline">
+                  {group.title}
+                </AccordionTrigger>
+                <AccordionContent className="pb-2">
+                  <SidebarMenu className="pl-2 border-l border-sidebar-border ml-2">
+                    {renderNavItems(group.items)}
+                  </SidebarMenu>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+          <div className="hidden group-data-[collapsible=icon]:block">
+             <SidebarMenu>
+                {renderNavItems(contentCreationNav)}
+                {renderNavItems(socialNav)}
+                {renderNavItems(projectsNav)}
+             </SidebarMenu>
+          </div>
         </SidebarContent>
         <SidebarFooter className="p-2">
           <LoginProfile />
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      <div className="flex-1 md:ml-[var(--sidebar-width)] transition-all duration-300 ease-in-out group-data-[state=collapsed]:md:ml-[var(--sidebar-width-icon)]">
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-6 backdrop-blur-sm md:h-16">
-          <SidebarTrigger className='md:hidden' />
+          <SidebarTrigger className="md:hidden" />
           {/* Header content can go here if needed */}
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
-           {isUnauthorizedUser ? <AccessDenied /> : children}
+          {isUnauthorizedUser ? <AccessDenied /> : children}
         </main>
-      </SidebarInset>
+      </div>
     </SidebarProvider>
   );
 }
