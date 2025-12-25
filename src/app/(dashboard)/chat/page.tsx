@@ -21,12 +21,13 @@ const formSchema = z.object({
 });
 
 interface Message {
+  id: string;
   role: 'user' | 'model';
-  content: { text: string }[];
+  content: string;
 }
 
 // Custom hook for the typewriter effect
-function useTypewriter(text: string, speed = 30) {
+function useTypewriter(text: string, speed = 20) {
   const [displayText, setDisplayText] = useState('');
 
   useEffect(() => {
@@ -51,7 +52,8 @@ function useTypewriter(text: string, speed = 30) {
 
 const ChatMessage = ({ msg, user }: { msg: Message, user: any }) => {
     const isModel = msg.role === 'model';
-    const displayText = useTypewriter(msg.content[0].text);
+    // The typewriter effect is only applied to the last model message
+    const displayText = useTypewriter(msg.content);
 
     return (
         <div className={cn('flex items-start gap-4', isModel ? 'justify-start' : 'justify-end')}>
@@ -65,7 +67,7 @@ const ChatMessage = ({ msg, user }: { msg: Message, user: any }) => {
                 isModel ? 'bg-card border' : 'bg-primary text-primary-foreground'
             )}>
             <p className="whitespace-pre-wrap leading-relaxed">
-              {isModel ? displayText : msg.content[0].text}
+              {isModel ? displayText : msg.content}
             </p>
           </div>
           {!isModel && user && (
@@ -103,14 +105,14 @@ export default function ChatPage() {
   }, [messages]);
 
   const handleSendMessage = (values: z.infer<typeof formSchema>) => {
-    const userMessage: Message = { role: 'user', content: [{ text: values.prompt }] };
+    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: values.prompt };
     setMessages(prev => [...prev, userMessage]);
     form.reset();
   
     startGenerating(async () => {
       try {
         const result = await generateChatResponse({ prompt: values.prompt });
-        const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
+        const modelMessage: Message = { id: (Date.now() + 1).toString(), role: 'model', content: result.response };
         setMessages(prev => [...prev, modelMessage]);
       } catch (error) {
         toast({
@@ -148,9 +150,37 @@ export default function ChatPage() {
             </p>
           </div>
         ) : (
-          messages.map((msg, index) => (
-             <ChatMessage key={index} msg={msg} user={user} />
-          ))
+          messages.map((msg, index) => {
+             const isLastModelMessage = msg.role === 'model' && index === messages.length -1;
+             if (isLastModelMessage) {
+                return <ChatMessage key={msg.id} msg={msg} user={user} />;
+             }
+             return (
+                <div key={msg.id} className={cn('flex items-start gap-4', msg.role === 'model' ? 'justify-start' : 'justify-end')}>
+                    {msg.role === 'model' && (
+                        <Avatar className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <Bot className="h-5 w-5" />
+                        </Avatar>
+                    )}
+                    <div className={cn(
+                        'max-w-2xl rounded-lg p-3 px-4 shadow-sm', 
+                        msg.role === 'model' ? 'bg-card border' : 'bg-primary text-primary-foreground'
+                    )}>
+                        <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    </div>
+                    {msg.role === 'user' && user && (
+                        <Avatar className="flex h-8 w-8 shrink-0 items-center justify-center">
+                        {user?.photoURL ? (
+                                <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
+                            ) : null}
+                            <AvatarFallback>
+                                <User className="h-5 w-5" />
+                            </AvatarFallback>
+                        </Avatar>
+                    )}
+                </div>
+             )
+          })
         )}
          {isGenerating && (
             <div className="flex items-start gap-4">
