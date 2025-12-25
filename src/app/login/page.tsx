@@ -37,12 +37,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="mx-auto max-w-sm rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+        <div className="mx-auto max-w-sm rounded-lg border border-border bg-card p-4">
             <div className="flex items-center gap-3">
-                 <ShieldAlert className="h-6 w-6" />
-                <h3 className="font-semibold">Admin Access Only</h3>
+                 <ShieldAlert className="h-6 w-6 text-muted-foreground" />
+                <h3 className="font-semibold text-card-foreground">Admin Access Only</h3>
             </div>
-            <p className="mt-2 text-sm text-destructive/80">
+            <p className="mt-2 text-sm text-muted-foreground">
                 This application is restricted to authorized administrators. Unauthorized access attempts will be denied.
             </p>
         </div>

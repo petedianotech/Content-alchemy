@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { DashboardLayout as InnerDashboardLayout } from '@/components/layout/DashboardLayout';
-import { Loader2 } from 'lucide-react';
+import { BrainCircuit } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -25,7 +26,7 @@ export default function DashboardLayout({
   if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <BrainCircuit className="h-12 w-12 animate-pulse text-primary" />
       </div>
     );
   }
