@@ -52,8 +52,22 @@ function useTypewriter(text: string, speed = 20) {
 
 const ChatMessage = ({ msg, user, isLastModelMessage }: { msg: Message, user: any, isLastModelMessage: boolean }) => {
     const isModel = msg.role === 'model';
-    // The typewriter effect is only applied to the last model message
-    const displayText = isLastModelMessage ? useTypewriter(msg.content) : msg.content;
+    // The typewriter effect is only applied to the last model message that is currently being generated.
+    const isGenerating = isLastModelMessage && msg.content === '';
+    const displayText = isLastModelMessage && !isGenerating ? useTypewriter(msg.content) : msg.content;
+    
+    if (isGenerating) {
+        return (
+             <div className="flex items-start gap-4">
+               <Avatar className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Bot className="h-5 w-5" />
+                </Avatar>
+              <div className="max-w-md rounded-lg bg-card border p-3 shadow-sm">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              </div>
+            </div>
+        );
+    }
 
     return (
         <div className={cn('flex items-start gap-4', isModel ? 'justify-start' : 'justify-end')}>
@@ -102,26 +116,34 @@ export default function ChatPage() {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages, isGenerating]); // Also trigger on isGenerating to scroll for the thinking indicator
+  }, [messages]);
 
   const handleSendMessage = (values: z.infer<typeof formSchema>) => {
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: values.prompt };
-    setMessages(prev => [...prev, userMessage]);
+    const thinkingMessage: Message = { id: (Date.now() + 1).toString(), role: 'model', content: '' };
+    
+    setMessages(prev => [...prev, userMessage, thinkingMessage]);
     form.reset();
   
     startGenerating(async () => {
       try {
         const result = await generateChatResponse({ prompt: values.prompt });
         const modelMessage: Message = { id: (Date.now() + 1).toString(), role: 'model', content: result.response };
-        setMessages(prev => [...prev, modelMessage]);
+        
+        setMessages(prev => {
+            // Replace the "thinking" message with the actual response
+            const newMessages = prev.filter(m => m.id !== thinkingMessage.id);
+            return [...newMessages, modelMessage];
+        });
+
       } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Oh no! Something went wrong.',
           description: 'There was a problem communicating with the AI. Please try again.',
         });
-        // Remove the user's message if the AI fails to respond
-        setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+        // Remove both the user's message and the thinking message if the AI fails
+        setMessages(prev => prev.filter(m => m.id !== userMessage.id && m.id !== thinkingMessage.id));
       }
     });
   };
@@ -155,20 +177,10 @@ export default function ChatPage() {
                 key={msg.id} 
                 msg={msg} 
                 user={user} 
-                isLastModelMessage={msg.role === 'model' && index === messages.length - 1 && isGenerating} 
+                isLastModelMessage={index === messages.length - 1} 
               />
           ))
         )}
-         {isGenerating && messages[messages.length-1]?.role === 'user' && (
-            <div className="flex items-start gap-4">
-               <Avatar className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <Bot className="h-5 w-5" />
-                </Avatar>
-              <div className="max-w-md rounded-lg bg-card border p-3 shadow-sm">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              </div>
-            </div>
-          )}
       </div>
 
       <div className="mt-4 border-t pt-4">
