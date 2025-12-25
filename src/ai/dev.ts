@@ -18,4 +18,3 @@ import '@/ai/flows/generate-and-post-tweet.ts';
 import '@/ai/flows/scheduled-tweet-flow.ts';
 import '@/ai/flows/generate-chat-response.ts';
 import '@/ai/flows/scheduled-facebook-post-flow.ts';
-import '@/ai/flows/connect-facebook-page.ts';
