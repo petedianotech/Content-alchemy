@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -16,6 +15,8 @@ import {
   MessageSquare,
   ShieldAlert,
   BarChart2,
+  Sparkles,
+  Zap,
 } from 'lucide-react';
 
 import PeteAiLogo from '@/components/icons/PeteAiLogo';
@@ -34,30 +35,36 @@ import {
   SidebarMenuSubItem,
   SidebarTrigger,
   SidebarInset,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
 
-const menuItems = [
+const mainNav = [
   {
     href: '/',
     label: 'Dashboard',
     icon: Home,
   },
-    {
+  {
     href: '/chat',
-    label: 'Chat',
+    label: 'AI Assistant',
     icon: MessageSquare,
   },
+  {
+    href: '/my-posts',
+    label: 'Content Library',
+    icon: Library,
+    authRequired: true,
+  },
+];
+
+const contentCreationNav = [
   {
     href: '/blog-post-generator',
     label: 'Blog Post Generator',
     icon: BookText,
-  },
-  {
-    href: '/facebook-post-generator',
-    label: 'Facebook Post Maker',
-    icon: Facebook,
   },
   {
     href: '/youtube-script-generator',
@@ -65,36 +72,41 @@ const menuItems = [
     icon: Youtube,
   },
   {
-    href: '/prompt-generator',
-    label: 'Prompt Generator',
-    icon: ImageIcon,
-  },
-  {
     href: '/image-generator',
     label: 'Image Generator',
     icon: ImageIcon,
   },
   {
-    href: '/book-generator',
-    label: 'Book Generator',
-    icon: BookOpen,
+    href: '/prompt-generator',
+    label: 'Image Prompt Generator',
+    icon: Sparkles,
   },
+];
+
+const socialNav = [
   {
     href: '/tweet-generator',
     label: 'Tweet Generator',
     icon: Twitter,
   },
-    {
+  {
     href: '/tweet-analytics',
     label: 'Tweet Analytics',
     icon: BarChart2,
     authRequired: true,
   },
   {
-    href: '/my-posts',
-    label: 'My Saved Posts',
-    icon: Library,
-    authRequired: true,
+    href: '/facebook-post-generator',
+    label: 'Facebook Post Generator',
+    icon: Facebook,
+  },
+];
+
+const projectsNav = [
+  {
+    href: '/book-generator',
+    label: 'Book Writer',
+    icon: BookOpen,
   },
 ];
 
@@ -128,6 +140,27 @@ export function DashboardLayout({
     return pathname.startsWith(href) && href !== '/';
   };
   
+  const renderNavItems = (items: typeof mainNav) => {
+    return items.map((item) =>
+      (item.authRequired && !user) ? null : (
+        <SidebarMenuItem key={item.href}>
+          <SidebarMenuButton
+            asChild
+            isActive={isActive(item.href)}
+            tooltip={{
+              children: item.label,
+            }}
+          >
+            <Link href={item.href}>
+              <item.icon />
+              <span>{item.label}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      )
+    );
+  };
+
 
   return (
     <SidebarProvider>
@@ -141,26 +174,22 @@ export function DashboardLayout({
           </Link>
         </SidebarHeader>
         <SidebarContent className="p-2">
-          <SidebarMenu>
-            {menuItems.map((item) =>
-              (item.authRequired && !user) ? null : (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.href)}
-                    tooltip={{
-                      children: item.label,
-                    }}
-                  >
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )
-            )}
-          </SidebarMenu>
+            <SidebarMenu>
+               {renderNavItems(mainNav)}
+            </SidebarMenu>
+            <SidebarGroup>
+                <SidebarGroupLabel>Content Creation</SidebarGroupLabel>
+                <SidebarMenu>{renderNavItems(contentCreationNav)}</SidebarMenu>
+            </SidebarGroup>
+            <SidebarGroup>
+                <SidebarGroupLabel>Social & Automation</SidebarGroupLabel>
+                <SidebarMenu>{renderNavItems(socialNav)}</SidebarMenu>
+            </SidebarGroup>
+             <SidebarGroup>
+                <SidebarGroupLabel>Projects</SidebarGroupLabel>
+                <SidebarMenu>{renderNavItems(projectsNav)}</SidebarMenu>
+            </SidebarGroup>
+
         </SidebarContent>
         <SidebarFooter className="p-2">
           <LoginProfile />
