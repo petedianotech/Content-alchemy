@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -157,9 +158,7 @@ export default function ImageGeneratorPage() {
         <Card className="flex flex-col items-center justify-center p-6">
           {isGenerating && (
             <div className="flex flex-col items-center justify-center gap-4 text-center">
-              <div className="animate-spin text-primary">
-                <Loader2 className="h-24 w-24" />
-              </div>
+              <Loader2 className="h-24 w-24 animate-spin text-primary" />
               <h2 className="font-headline text-2xl text-primary">
                 Creating Your Vision...
               </h2>

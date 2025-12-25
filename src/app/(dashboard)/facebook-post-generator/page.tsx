@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -153,9 +154,7 @@ export default function FacebookPostGenerator() {
   if (view === "loading") {
     return (
       <div className="flex h-[calc(100vh-10rem)] flex-col items-center justify-center gap-4 text-center">
-        <div className="animate-spin text-primary">
-          <Loader2 className="h-24 w-24" />
-        </div>
+        <Loader2 className="h-24 w-24 animate-spin text-primary" />
         <h1 className="font-headline text-3xl text-primary">
           Crafting Your Facebook Post...
         </h1>

@@ -109,7 +109,6 @@ export default function ChatPage() {
   
     startGenerating(async () => {
       try {
-        // We will no longer send history to simplify and fix the bug.
         const result = await generateChatResponse({ prompt: values.prompt });
         const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
         setMessages(prev => [...prev, modelMessage]);
