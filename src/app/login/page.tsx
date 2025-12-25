@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import Link from 'next/link';
 import { useAuth, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { BrainCircuit, ShieldAlert } from 'lucide-react';
@@ -74,7 +75,15 @@ export default function LoginPage() {
           Sign In with Google
         </Button>
          <p className="px-8 text-center text-sm text-muted-foreground">
-            By clicking continue, you agree to our Terms of Service and Privacy Policy.
+            By clicking continue, you agree to our{' '}
+            <Link href="/terms-of-service" className="underline underline-offset-4 hover:text-primary">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy-policy" className="underline underline-offset-4 hover:text-primary">
+              Privacy Policy
+            </Link>
+            .
         </p>
       </div>
     </div>
