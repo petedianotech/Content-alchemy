@@ -21,6 +21,7 @@ export default function LoginProfile() {
   const { state } = useSidebar();
 
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -30,6 +31,7 @@ export default function LoginProfile() {
   };
 
   const handleSignOut = async () => {
+    if (!auth) return;
     try {
       await signOut(auth);
     } catch (error) {
@@ -56,7 +58,12 @@ export default function LoginProfile() {
   if (state === 'collapsed') {
      return (
         <Avatar className="h-8 w-8">
-            <Image src="/profile.png" alt="User Profile" width={32} height={32} className="rounded-full" />
+            {user?.photoURL ? (
+                <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
+            ) : null}
+            <AvatarFallback>
+                <UserIcon className="h-5 w-5" />
+            </AvatarFallback>
         </Avatar>
      )
   }
@@ -65,7 +72,12 @@ export default function LoginProfile() {
     <div className='flex w-full flex-col gap-2 rounded-lg bg-sidebar-accent p-2 text-sidebar-accent-foreground'>
        <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-               <Image src="/profile.png" alt="User Profile" width={32} height={32} className="rounded-full" />
+               {user?.photoURL ? (
+                    <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
+                ) : null}
+                <AvatarFallback>
+                    <UserIcon className="h-5 w-5" />
+                </AvatarFallback>
             </Avatar>
             <div className='flex flex-col truncate'>
                 <p className="truncate text-sm font-medium leading-none">
