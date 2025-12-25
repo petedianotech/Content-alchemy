@@ -4,18 +4,10 @@
 /**
  * @fileOverview A flow for generating a scheduled blog post.
  */
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { generateBlogPostDraft, type GenerateBlogPostDraftInput } from './generate-blog-post-draft';
-import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps } from 'firebase/app';
-
-// Ensure Firebase is initialized
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
-const firestore = getFirestore();
+import { initAdmin } from '@/firebase/server-init';
 
 // This is the user ID whose settings will be used for scheduled posts.
 const SCHEDULED_POST_USER_ID = process.env.PRIMARY_USER_UID;
@@ -43,6 +35,8 @@ const scheduledBlogPostFlowInternal = ai.defineFlow(
       console.error(errorMsg);
       return { success: false, message: errorMsg };
     }
+    
+    const { firestore } = initAdmin();
 
     // Define a fallback input in case settings are not found in Firestore.
     let input: GenerateBlogPostDraftInput = {
@@ -51,15 +45,19 @@ const scheduledBlogPostFlowInternal = ai.defineFlow(
     };
 
     try {
-      const settingsDocRef = doc(firestore, 'users', SCHEDULED_POST_USER_ID, 'blogSettings', 'default');
-      const docSnap = await getDoc(settingsDocRef);
+      const settingsDocRef = firestore
+        .collection('users')
+        .doc(SCHEDULED_POST_USER_ID)
+        .collection('blogSettings')
+        .doc('default');
+      const docSnap = await settingsDocRef.get();
 
-      if (docSnap.exists()) {
+      if (docSnap.exists) {
         console.log('Found saved blog post settings, using them for generation.');
         const settingsData = docSnap.data();
         input = {
-          topic: settingsData.topic || input.topic,
-          requirements: settingsData.requirements || input.requirements,
+          topic: settingsData?.topic || input.topic,
+          requirements: settingsData?.requirements || input.requirements,
         };
       } else {
         console.log('No saved blog settings found. Using default input.');

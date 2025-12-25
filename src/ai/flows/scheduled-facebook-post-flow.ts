@@ -1,20 +1,13 @@
+
 'use server';
 
 /**
  * @fileOverview A flow for generating and posting a scheduled Facebook post.
  */
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { generateFacebookPost, type GenerateFacebookPostInput } from './generate-facebook-post';
-import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps } from 'firebase/app';
-
-// Ensure Firebase is initialized
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
-const firestore = getFirestore();
+import { initAdmin } from '@/firebase/server-init';
 
 // This is the user ID whose settings will be used for scheduled posts.
 const SCHEDULED_POST_USER_ID = process.env.PRIMARY_USER_UID;
@@ -62,21 +55,31 @@ const scheduledFacebookPostFlowInternal = ai.defineFlow(
       console.error(errorMsg);
       return { success: false, message: errorMsg };
     }
+    
+    const { firestore } = initAdmin();
 
     try {
         // 1. Fetch user's Facebook settings (Page ID, Access Token) from Firestore.
-        const fbSettingsRef = doc(firestore, 'users', SCHEDULED_POST_USER_ID, 'facebookSettings', 'default');
-        const fbSettingsSnap = await getDoc(fbSettingsRef);
+        const fbSettingsRef = firestore
+            .collection('users')
+            .doc(SCHEDULED_POST_USER_ID)
+            .collection('facebookSettings')
+            .doc('default');
+        const fbSettingsSnap = await fbSettingsRef.get();
 
-        if (!fbSettingsSnap.exists() || !fbSettingsSnap.data().accessToken) {
+        if (!fbSettingsSnap.exists() || !fbSettingsSnap.data()?.accessToken) {
             return { success: false, message: "Facebook settings or access token not found for user." };
         }
-        const { pageId, accessToken } = fbSettingsSnap.data();
+        const { pageId, accessToken } = fbSettingsSnap.data()!;
 
 
         // 2. Fetch user's default post generation settings (topic, requirements).
-        const blogSettingsRef = doc(firestore, 'users', SCHEDULED_POST_USER_ID, 'blogSettings', 'default');
-        const blogSettingsSnap = await getDoc(blogSettingsRef);
+        const blogSettingsRef = firestore
+            .collection('users')
+            .doc(SCHEDULED_POST_USER_ID)
+            .collection('blogSettings')
+            .doc('default');
+        const blogSettingsSnap = await blogSettingsRef.get();
         
         let postInput: GenerateFacebookPostInput = {
             topic: "The amazing advancements in AI technology.",
@@ -84,7 +87,7 @@ const scheduledFacebookPostFlowInternal = ai.defineFlow(
         };
 
         if (blogSettingsSnap.exists()) {
-             const { topic, requirements } = blogSettingsSnap.data();
+             const { topic, requirements } = blogSettingsSnap.data()!;
              postInput = { topic, requirements };
         }
 
