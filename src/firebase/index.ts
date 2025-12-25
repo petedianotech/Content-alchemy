@@ -8,24 +8,9 @@ import { getFirestore } from 'firebase/firestore'
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
   if (!getApps().length) {
-    // When deploying to Vercel or other non-Firebase App Hosting environments,
-    // we need to explicitly pass the config.
-    if (process.env.NODE_ENV === 'production') {
-      const firebaseApp = initializeApp(firebaseConfig);
-      return getSdks(firebaseApp);
-    }
-    
-    // The automatic initialization is intended for Firebase App Hosting.
-    let firebaseApp;
-    try {
-      firebaseApp = initializeApp();
-    } catch (e) {
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
-
+    // Always initialize with the config object if no app is initialized.
+    // This is a robust way to handle all environments (local, Vercel, etc.).
+    const firebaseApp = initializeApp(firebaseConfig);
     return getSdks(firebaseApp);
   }
 
