@@ -1,25 +1,46 @@
 
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { BrainCircuit, ShieldAlert } from 'lucide-react';
 
 export default function LoginPage() {
   const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If the user is loaded and exists, redirect to the dashboard.
+    if (!isUserLoading && user) {
+      router.replace('/');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
-      if (auth) {
-        await signInWithPopup(auth, provider);
-      }
+      await signInWithPopup(auth, provider);
     } catch (error) {
       console.error('Error signing in with Google', error);
     }
   };
+  
+  // While checking for user, you can show a loader or nothing
+  if (isUserLoading) {
+     return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <BrainCircuit className="h-12 w-12 animate-pulse text-primary" />
+      </div>
+    );
+  }
 
+
+  // If no user, show the login page
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
        <div className="absolute inset-0 -z-10 bg-[radial-gradient(40%_120%_at_50%_100%,hsl(var(--primary)/0.15),transparent)]" />
@@ -51,6 +72,7 @@ export default function LoginPage() {
           size="lg" 
           onClick={handleGoogleSignIn}
           className="w-full max-w-xs"
+          disabled={!auth}
         >
           Sign In with Google
         </Button>
